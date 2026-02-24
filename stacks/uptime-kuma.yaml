@@ -1,0 +1,48 @@
+# =============================================================================
+# Uptime Kuma - Service Monitoring
+# =============================================================================
+# Monitors your services and alerts you when something goes down.
+# Supports HTTP, TCP, DNS, and ping checks with a beautiful dashboard.
+#
+# NOTE: This service does NOT publish ports directly to the host.
+# It is only reachable through Caddy on the shared 'proxy' network.
+# This is a key security pattern — the reverse proxy is the single
+# point of entry. If you need direct access for debugging, uncomment
+# the ports section below.
+#
+# Access at: http://SERVER_IP:8090 (routed through Caddy)
+# =============================================================================
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1.23.16
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      # Monitoring data is stored in SQLite inside this volume
+      - uptime_kuma_data:/app/data
+    networks:
+      - proxy
+    # Uncomment for direct access (bypassing Caddy):
+    # ports:
+    #   - "3001:3001"
+    environment:
+      - TZ=${TZ:-UTC}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3001 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  uptime_kuma_data:
+    name: uptime_kuma_data
+
+networks:
+  proxy:
+    external: true

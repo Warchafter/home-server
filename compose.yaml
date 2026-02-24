@@ -1,0 +1,33 @@
+# =============================================================================
+# Home Server - Docker Compose Root
+# =============================================================================
+# This is the main entry point. Run everything with:
+#
+#   docker compose up -d          Start all services
+#   docker compose down            Stop all services
+#   docker compose ps              See running services
+#   docker compose logs -f caddy   Follow logs for a specific service
+#
+# Each service is defined in its own file under stacks/ for readability.
+# The 'include' directive merges them into a single Compose application,
+# so all services share networks and can reference each other by name.
+# =============================================================================
+
+include:
+  - path: stacks/caddy.yaml
+  - path: stacks/adguard.yaml
+  - path: stacks/uptime-kuma.yaml
+  - path: stacks/homepage.yaml
+
+# =============================================================================
+# Shared Networks
+# =============================================================================
+# All services join this network so Caddy can reverse-proxy to them by
+# container name (e.g., "uptime-kuma:3001"). Docker's built-in DNS resolves
+# container names automatically on user-defined bridge networks — this does
+# NOT work on the default bridge network, which is why we create our own.
+# =============================================================================
+networks:
+  proxy:
+    name: proxy
+    driver: bridge

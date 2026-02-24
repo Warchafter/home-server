@@ -1,0 +1,55 @@
+# =============================================================================
+# Caddy - Reverse Proxy
+# =============================================================================
+# Caddy sits in front of all your services and routes traffic to the right
+# container based on the URL. It also handles HTTPS certificates automatically
+# when you add a domain later.
+#
+# Right now (no domain), Caddy listens on multiple ports and forwards each
+# to the appropriate service. See caddy/Caddyfile for the routing rules.
+# =============================================================================
+
+services:
+  caddy:
+    image: caddy:2.9.1
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"           # Homepage dashboard (landing page)
+      - "8090:8090"       # Uptime Kuma (via Caddy)
+      - "8091:8091"       # AdGuard Home UI (via Caddy)
+      # - "443:443"       # HTTPS — uncomment when you add a domain
+    volumes:
+      # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Caddy stores TLS certificates and state here
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - proxy
+    # Uncomment when switching to domain mode (see docs/adding-a-domain.md):
+    # environment:
+    #   - DOMAIN=${DOMAIN}
+    #   - ACME_EMAIL=${ACME_EMAIL}
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+volumes:
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config
+
+# Network is created by the root compose.yaml via the include directive.
+# These stack files must be run via the root compose.yaml, not independently.
+networks:
+  proxy:
+    external: true

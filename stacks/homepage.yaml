@@ -1,0 +1,51 @@
+# =============================================================================
+# Homepage - Dashboard
+# =============================================================================
+# A clean, fast dashboard that shows all your services at a glance.
+# Configuration lives in homepage/config/ (version-controlled YAML files).
+#
+# The Docker socket is mounted read-only so Homepage can auto-detect
+# container status (running/stopped) without being able to modify anything.
+#
+# Access at: http://SERVER_IP (the default landing page via Caddy)
+# =============================================================================
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v0.10.9
+    container_name: homepage
+    restart: unless-stopped
+    environment:
+      # Which hostnames/IPs are allowed to access the dashboard.
+      # Without this, Homepage rejects requests as a security measure.
+      # Uses wildcard by default since this is behind a LAN/Tailscale.
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-*}
+      # Passed to config files as {{HOMEPAGE_VAR_SERVER_IP}}
+      - HOMEPAGE_VAR_SERVER_IP=${SERVER_IP:-localhost}
+      # AdGuard credentials for widget (set after completing AdGuard wizard)
+      - HOMEPAGE_VAR_ADGUARD_USER=${ADGUARD_USER:-}
+      - HOMEPAGE_VAR_ADGUARD_PASS=${ADGUARD_PASS:-}
+      - TZ=${TZ:-UTC}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    volumes:
+      # Dashboard config files (we version-control these in the repo)
+      - ../homepage/config:/app/config
+      # Docker socket for container auto-discovery (read-only)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+networks:
+  proxy:
+    external: true

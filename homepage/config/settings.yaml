@@ -1,0 +1,12 @@
+# Homepage dashboard settings
+# Docs: https://gethomepage.dev/configs/settings/
+
+title: Home Server
+
+layout:
+  Infrastructure:
+    style: row
+    columns: 3
+  Monitoring:
+    style: row
+    columns: 2

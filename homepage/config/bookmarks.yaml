@@ -1,0 +1,18 @@
+# Quick reference links
+# Docs: https://gethomepage.dev/configs/bookmarks/
+
+- Documentation:
+    - Docker Docs:
+        - icon: docker.png
+          href: https://docs.docker.com/compose/
+    - Caddy Docs:
+        - icon: caddy.png
+          href: https://caddyserver.com/docs/
+    - AdGuard Wiki:
+        - icon: adguard-home.png
+          href: https://github.com/AdguardTeam/AdGuardHome/wiki
+
+- Project:
+    - GitHub Repo:
+        - icon: github.png
+          href: https://github.com/Warchafter/home-server

@@ -1,0 +1,12 @@
+# Top-bar widgets (above service cards)
+# Docs: https://gethomepage.dev/configs/widgets/
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: long
+      timeStyle: short
+
+- search:
+    provider: google
+    target: _blank

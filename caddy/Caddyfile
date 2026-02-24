@@ -1,0 +1,72 @@
+# =============================================================================
+# Caddyfile - Reverse Proxy Configuration
+# =============================================================================
+#
+# HOW THIS WORKS:
+# Caddy listens on ports and routes requests to the correct Docker container.
+# Containers are referenced by their container_name (e.g., "uptime-kuma")
+# because they share a Docker network with Caddy. Docker's internal DNS
+# resolves these names automatically.
+#
+# CURRENT MODE: Port-based routing (no domain needed)
+# Each service gets a unique port on the server's IP.
+#
+# UPGRADE PATH: When you get a domain, see docs/adding-a-domain.md
+#
+# RELOADING: After editing this file, reload Caddy without restarting:
+#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Homepage Dashboard — the landing page
+# Access at: http://SERVER_IP (port 80)
+# ---------------------------------------------------------------------------
+:80 {
+	reverse_proxy homepage:3000
+}
+
+# ---------------------------------------------------------------------------
+# Uptime Kuma — service monitoring
+# Access at: http://SERVER_IP:8090
+# ---------------------------------------------------------------------------
+:8090 {
+	reverse_proxy uptime-kuma:3001
+}
+
+# ---------------------------------------------------------------------------
+# AdGuard Home — DNS admin panel
+# Access at: http://SERVER_IP:8091
+# Note: DNS itself runs on port 53 (separate from this web UI)
+# ---------------------------------------------------------------------------
+:8091 {
+	reverse_proxy adguard:80
+}
+
+# =============================================================================
+# DOMAIN MODE (uncomment when you have a domain)
+# See docs/adding-a-domain.md for step-by-step instructions.
+#
+# WARNING: You must comment out ALL port-based blocks above before
+# uncommenting the domain blocks below. Running both simultaneously
+# will cause routing conflicts.
+#
+# Also uncomment the 'environment' block in stacks/caddy.yaml to pass
+# DOMAIN and ACME_EMAIL to the container.
+# =============================================================================
+#
+# {
+#     # Global options — your email for Let's Encrypt notifications
+#     email {env.ACME_EMAIL}
+# }
+#
+# dashboard.home.{env.DOMAIN} {
+#     reverse_proxy homepage:3000
+# }
+#
+# status.home.{env.DOMAIN} {
+#     reverse_proxy uptime-kuma:3001
+# }
+#
+# adguard.home.{env.DOMAIN} {
+#     reverse_proxy adguard:80
+# }

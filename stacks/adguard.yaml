@@ -1,0 +1,60 @@
+# =============================================================================
+# AdGuard Home - DNS + Ad Blocking
+# =============================================================================
+# AdGuard Home acts as a DNS server for your entire network. When devices
+# ask "where is ads.example.com?", AdGuard blocks the request before it
+# ever reaches your browser — no extensions needed, works on every device.
+#
+# SETUP:
+#   1. First run: open http://SERVER_IP:3000 to complete the setup wizard
+#      - Set an admin username and password
+#      - Choose upstream DNS (recommend: 1.1.1.1 or 8.8.8.8)
+#   2. After setup, the web UI is available at http://SERVER_IP:8091 (via Caddy)
+#   3. Point your router's DHCP DNS setting to SERVER_IP so all devices use it
+#   4. IMPORTANT: Also set a secondary DNS (e.g., 1.1.1.1) on your router
+#      as a fallback in case AdGuard goes down
+#
+# PORT 53 CONFLICT:
+#   On Ubuntu, systemd-resolved listens on port 53 by default.
+#   The setup.sh script fixes this. If you skipped it, see:
+#   https://github.com/AdguardTeam/AdGuardHome/wiki/Docker#resolved
+# =============================================================================
+
+services:
+  adguard:
+    image: adguard/adguardhome:v0.107.54
+    container_name: adguard
+    restart: unless-stopped
+    ports:
+      # DNS — must be reachable on the server's IP for other devices to use it.
+      # Falls back to 127.0.0.1 (localhost only) if SERVER_IP is unset,
+      # to avoid accidentally creating an open DNS resolver on all interfaces.
+      - "${SERVER_IP:-127.0.0.1}:53:53/tcp"
+      - "${SERVER_IP:-127.0.0.1}:53:53/udp"
+      # Setup wizard — only needed on first run. Comment out after setup.
+      - "${SERVER_IP:-127.0.0.1}:3000:3000"
+    volumes:
+      - adguard_work:/opt/adguardhome/work
+      - adguard_conf:/opt/adguardhome/conf
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "nslookup localhost 127.0.0.1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  adguard_work:
+    name: adguard_work
+  adguard_conf:
+    name: adguard_conf
+
+networks:
+  proxy:
+    external: true

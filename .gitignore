@@ -1,6 +1,7 @@
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # OS files
 .DS_Store
@@ -21,6 +22,15 @@ venv/
 
 # Docker
 .docker/
+data/
+
+# Caddy state (if bind-mounted)
+caddy/data/
+caddy/config/
 
 # Logs
 *.log
+
+# Backups
+*.bak
+*.backup

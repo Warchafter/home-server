@@ -19,3 +19,4 @@
 
 - Keep commit messages clean and personal-project appropriate.
 - Use conventional commit style (e.g., `feat:`, `fix:`, `docs:`, `chore:`).
+- **Never** add `Co-Authored-By` lines to commit messages.

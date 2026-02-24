@@ -1,0 +1,42 @@
+# Homepage dashboard services
+# Docs: https://gethomepage.dev/configs/services/
+#
+# Each entry shows a card on the dashboard with a link and optional widget.
+# {{HOMEPAGE_VAR_*}} references pull from the container's environment variables.
+
+- Infrastructure:
+    - Caddy:
+        icon: caddy.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}"
+        description: Reverse proxy
+        server: local
+        container: caddy
+
+    - AdGuard Home:
+        icon: adguard-home.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8091"
+        description: DNS & ad blocking
+        server: local
+        container: adguard
+        widget:
+          type: adguard
+          url: http://adguard
+          username: "{{HOMEPAGE_VAR_ADGUARD_USER}}"
+          password: "{{HOMEPAGE_VAR_ADGUARD_PASS}}"
+
+    - Tailscale:
+        icon: tailscale.png
+        href: https://login.tailscale.com/admin/machines
+        description: Remote access VPN (runs on host, no container status)
+
+- Monitoring:
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8090"
+        description: Service uptime monitoring
+        server: local
+        container: uptime-kuma
+        widget:
+          type: uptimekuma
+          url: http://uptime-kuma:3001
+          slug: default  # Must match a status page slug you create in Uptime Kuma UI
