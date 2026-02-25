@@ -1,0 +1,420 @@
+# Go Time: Phase 2 — Core Services
+
+*Alright nova, Phase 1 is running clean — you've got DNS blocking,
+monitoring, a dashboard, and remote access. Now we're stacking the
+services that make this box actually useful day-to-day. Password
+manager, media server, the whole arr pipeline, smart home, and file
+sync. Same drill as before: follow the steps in order, don't skip
+ahead.*
+
+---
+
+## Before You Start
+
+Phase 1 must be fully operational. Verify on the HP:
+```bash
+cd ~/home-server
+docker compose ps
+```
+
+You should see 4 containers running: `caddy`, `adguard`, `homepage`,
+`uptime-kuma`. If anything's down, fix that first.
+
+---
+
+## The Rundown (8 Steps)
+
+### 1. Pull the latest config
+
+From your **laptop**, push any local changes. Then on the **HP**:
+```bash
+cd ~/home-server
+git pull
+```
+
+You should see the 8 new stack files and updated configs come down.
+
+---
+
+### 2. Re-run the setup script
+
+The setup script has new Phase 2 steps — it creates the media
+directory structure and checks for GPU/USB hardware:
+
+```bash
+bash scripts/setup.sh
+```
+
+It's idempotent, so it won't reinstall Docker or Tailscale. It will:
+- Create `/srv/media/` with `movies/`, `tv/`, and `downloads/` subdirectories
+- Create `/srv/syncthing/` for file sync
+- Check if your HP has a GPU (for Jellyfin hardware transcoding)
+- Check for USB devices (for Home Assistant Zigbee/Z-Wave dongles)
+
+If you want different paths, edit `.env` first and change `MEDIA_PATH`
+and `SYNCTHING_DATA_PATH` before running the script.
+
+---
+
+### 3. Update your .env
+
+```bash
+nano .env
+```
+
+The new `.env.example` has Phase 2 variables. Your existing `.env`
+won't have them yet. Add these lines at the bottom:
+
+```bash
+# Media Storage
+MEDIA_PATH=/srv/media
+SYNCTHING_DATA_PATH=/srv/syncthing
+
+# Vaultwarden
+VAULTWARDEN_SIGNUPS_ALLOWED=true
+```
+
+That's all you need to start. The API keys and widget credentials
+come later, after each service is running.
+
+Save and exit (`Ctrl+X`, then `Y`, then `Enter`).
+
+---
+
+### 4. Fire it up
+
+```bash
+docker compose up -d
+```
+
+Docker pulls 8 new images (~2-3GB total on first run). This will
+take a few minutes depending on your internet speed.
+
+Check that everything came up:
+```bash
+docker compose ps
+```
+
+You want 12 containers with `running` status. If something says
+`restarting`, check its logs:
+```bash
+docker compose logs sonarr
+```
+
+---
+
+### 5. Set up each service
+
+Work through these in order. Each service has a first-run wizard or
+initial config step.
+
+#### Vaultwarden (Password Manager)
+Open `http://THE_IP:8092`
+
+1. Click "Create Account" and set up your admin credentials
+2. **CRITICAL:** After creating your account, lock it down:
+   ```bash
+   nano .env
+   # Change: VAULTWARDEN_SIGNUPS_ALLOWED=false
+   ```
+   Then: `docker compose up -d vaultwarden`
+3. Install the Bitwarden browser extension and point it at
+   `http://THE_IP:8092` (Settings > Self-hosted > Server URL)
+
+*Note: Mobile apps strongly prefer HTTPS. Vaultwarden works fine over
+HTTP on your LAN for browser extensions, but consider adding a domain
+(Phase 3) before migrating real passwords to mobile.*
+
+---
+
+#### qBittorrent (Download Client)
+Open `http://THE_IP:8097`
+
+1. The default username is `admin`
+2. Find the random initial password:
+   ```bash
+   docker compose logs qbittorrent | grep "temporary password"
+   ```
+3. Log in and **change the password immediately**
+   (Tools > Options > Web UI > Authentication)
+4. Set download paths (Tools > Options > Downloads):
+   - Default save path: `/media/downloads/complete`
+   - Keep incomplete torrents in: `/media/downloads/incomplete`
+5. Create download categories (right-click sidebar > New Category):
+   - Category: `movies` — Save path: `/media/downloads/complete/movies`
+   - Category: `tv` — Save path: `/media/downloads/complete/tv`
+
+*These categories are how Sonarr and Radarr tell qBittorrent where
+to put things. The paths must match exactly.*
+
+---
+
+#### Prowlarr (Indexer Manager)
+Open `http://THE_IP:8096`
+
+1. Set up authentication (Forms or Basic)
+2. Add indexers: Indexers > Add Indexer > pick your sources
+3. **Don't connect to Sonarr/Radarr yet** — do that after they're set up
+
+---
+
+#### Sonarr (TV Shows)
+Open `http://THE_IP:8094`
+
+1. Set up authentication
+2. Add root folder: Settings > Media Management > Root Folders
+   → Path: `/media/tv`
+3. Connect download client: Settings > Download Clients > Add
+   → Type: qBittorrent
+   → Host: `qbittorrent`, Port: `8080`
+   → Username/password from what you set in qBittorrent
+   → Category: `tv`
+4. Note your API key: Settings > General > API Key (you'll need it later)
+
+Now go back to **Prowlarr** and connect Sonarr:
+- Settings > Apps > Add Application > Sonarr
+- Prowlarr Server: `http://prowlarr:9696`
+- Sonarr Server: `http://sonarr:8989`
+- API Key: paste the Sonarr API key
+
+---
+
+#### Radarr (Movies)
+Open `http://THE_IP:8095`
+
+1. Set up authentication
+2. Add root folder: Settings > Media Management > Root Folders
+   → Path: `/media/movies`
+3. Connect download client: Settings > Download Clients > Add
+   → Type: qBittorrent
+   → Host: `qbittorrent`, Port: `8080`
+   → Username/password from qBittorrent
+   → Category: `movies`
+4. Note your API key: Settings > General > API Key
+
+Connect Radarr in **Prowlarr**:
+- Settings > Apps > Add Application > Radarr
+- Prowlarr Server: `http://prowlarr:9696`
+- Radarr Server: `http://radarr:7878`
+- API Key: paste the Radarr API key
+
+---
+
+#### Jellyfin (Media Server)
+Open `http://THE_IP:8093`
+
+1. Run the setup wizard — create admin account, pick language
+2. Add media libraries:
+   - Movies → Content type: Movies → Folder: `/media/movies`
+   - TV Shows → Content type: Shows → Folder: `/media/tv`
+3. Finish the wizard
+4. Generate an API key: Dashboard > API Keys > Add
+   (you'll need this for the Homepage widget)
+5. Install Jellyfin apps on your phone/TV/Roku/whatever
+
+*If you have an Intel GPU in the HP and want hardware transcoding:
+uncomment the `devices` section in `stacks/jellyfin.yaml`, then
+`docker compose up -d jellyfin`. See the comments in that file.*
+
+---
+
+#### Home Assistant (Smart Home)
+Open `http://THE_IP:8098`
+
+1. Run the onboarding wizard — create admin account, set your home location
+2. Add integrations: Settings > Devices & Services > Add Integration
+3. For the Homepage widget, generate a long-lived access token:
+   Click your profile (bottom-left) > Long-Lived Access Tokens > Create Token
+
+*If device auto-discovery doesn't work (Chromecast, Sonos, etc.),
+you may need to switch to host networking. See the comments in
+`stacks/homeassistant.yaml`.*
+
+*If you have Zigbee/Z-Wave dongles, plug them in and find the device
+path with `ls /dev/ttyUSB* /dev/ttyACM*`, then uncomment the `devices`
+section in the stack file.*
+
+---
+
+#### Syncthing (File Sync)
+Open `http://THE_IP:8099`
+
+1. The web UI opens directly (no login by default — set one in
+   Actions > Settings > GUI > Authentication)
+2. Note this server's Device ID: Actions > Show ID
+3. Install Syncthing on your other devices
+4. Add this server as a remote device using the Device ID
+5. Create shared folders between devices
+
+*Syncthing publishes ports 22000/tcp (sync) and 21027/udp (discovery)
+directly on the HP. Other Syncthing devices find and connect to your
+server through these ports.*
+
+---
+
+### 6. Wire up the Homepage dashboard
+
+Now that all services are running, grab the API keys and add them
+to `.env` so the Homepage widgets show real data:
+
+```bash
+nano .env
+```
+
+Add these (uncomment and fill in):
+```bash
+JELLYFIN_API_KEY=your-jellyfin-api-key
+SONARR_API_KEY=your-sonarr-api-key
+RADARR_API_KEY=your-radarr-api-key
+PROWLARR_API_KEY=your-prowlarr-api-key
+QBITTORRENT_USER=admin
+QBITTORRENT_PASS=your-qbittorrent-password
+HOMEASSISTANT_API_KEY=your-ha-long-lived-token
+```
+
+Where to find each key:
+| Service | Where to find the API key |
+|---------|--------------------------|
+| Jellyfin | Dashboard > API Keys |
+| Sonarr | Settings > General > API Key |
+| Radarr | Settings > General > API Key |
+| Prowlarr | Settings > General > API Key |
+| qBittorrent | Username/password you set in step 5 |
+| Home Assistant | Profile > Long-Lived Access Tokens |
+
+Then reload Homepage:
+```bash
+docker compose up -d homepage
+```
+
+*Remember: `docker compose restart` does NOT reload environment
+variables. Always use `docker compose up -d` when you change `.env`.*
+
+---
+
+### 7. Verify everything works
+
+Open these URLs in your browser:
+
+| What | URL | What you should see |
+|------|-----|---------------------|
+| Dashboard | `http://THE_IP` | All 12 services with status badges |
+| Vaultwarden | `http://THE_IP:8092` | Login page (or vault if logged in) |
+| Jellyfin | `http://THE_IP:8093` | Media dashboard |
+| Sonarr | `http://THE_IP:8094` | TV show calendar |
+| Radarr | `http://THE_IP:8095` | Movie library |
+| Prowlarr | `http://THE_IP:8096` | Indexer list |
+| qBittorrent | `http://THE_IP:8097` | Torrent list |
+| Home Assistant | `http://THE_IP:8098` | Smart home dashboard |
+| Syncthing | `http://THE_IP:8099` | Device/folder list |
+
+If the Homepage dashboard loads with all services showing status
+badges and widget data, your whole Phase 2 stack is running.
+
+---
+
+### 8. Add monitors in Uptime Kuma
+
+Go to `http://THE_IP:8090` and add HTTP monitors for each new service.
+Use the container names (not the host IP) since they're on the same
+Docker network:
+
+| Monitor | Type | URL |
+|---------|------|-----|
+| Vaultwarden | HTTP(s) | `http://vaultwarden:80` |
+| Jellyfin | HTTP(s) | `http://jellyfin:8096` |
+| Sonarr | HTTP(s) | `http://sonarr:8989` |
+| Radarr | HTTP(s) | `http://radarr:7878` |
+| Prowlarr | HTTP(s) | `http://prowlarr:9696` |
+| qBittorrent | HTTP(s) | `http://qbittorrent:8080` |
+| Home Assistant | HTTP(s) | `http://homeassistant:8123` |
+| Syncthing | HTTP(s) | `http://syncthing:8384` |
+
+Add them to your "default" status page so the Homepage widget picks
+them up.
+
+---
+
+## After It's Running
+
+**The hardlink check** — verify that Sonarr/Radarr are hardlinking
+instead of copying. After your first completed download + import, SSH
+in and check:
+```bash
+ls -li /srv/media/downloads/complete/tv/  # note the inode number
+ls -li /srv/media/tv/Show\ Name/Season\ 01/ # same inode = hardlink
+```
+If the inode numbers match, hardlinks are working. If they differ, the
+mount paths don't match between containers — revisit the volume mounts.
+
+**Memory usage** — check how much RAM the full stack is using:
+```bash
+docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}"
+```
+If Jellyfin hits its 1024m limit during a library scan, increase it in
+`stacks/jellyfin.yaml`.
+
+**Backup additions** — Phase 2 adds these volumes to your backup list:
+`vaultwarden_data`, `jellyfin_config`, `sonarr_config`, `radarr_config`,
+`prowlarr_config`, `qbittorrent_config`, `homeassistant_config`,
+`syncthing_config`. Plus the bind mount directories at `MEDIA_PATH`
+and `SYNCTHING_DATA_PATH`.
+
+**The *arr workflow** — once everything is wired up, the pipeline is:
+1. You add a movie/show in Radarr/Sonarr
+2. Prowlarr searches your indexers
+3. qBittorrent downloads it to `/media/downloads/complete/movies` (or `tv`)
+4. Sonarr/Radarr imports it via hardlink to `/media/movies` (or `tv`)
+5. Jellyfin picks it up automatically on its next library scan
+
+---
+
+## If Something Goes Wrong
+
+**Container won't start:**
+```bash
+docker compose logs SERVICE_NAME
+```
+
+**Port conflict:**
+```bash
+sudo ss -tulnp | grep ':PORT'
+```
+
+**Permission errors on media files:**
+All media containers must use the same PUID/PGID. Check `.env`:
+```bash
+grep -E "PUID|PGID" .env
+```
+Then verify the media directory ownership:
+```bash
+ls -la /srv/media/
+```
+The owner should match your PUID/PGID.
+
+**qBittorrent "Unauthorized" error:**
+The initial password is random. Check the logs:
+```bash
+docker compose logs qbittorrent | grep "temporary password"
+```
+
+**Homepage shows "API Error" on a widget:**
+- Did you add the API key to `.env`?
+- Did you run `docker compose up -d homepage` (not `restart`)?
+- Is the API key correct? (Copy-paste it again)
+
+**Jellyfin stutters during playback:**
+Enable hardware transcoding — uncomment `devices: - /dev/dri:/dev/dri`
+in `stacks/jellyfin.yaml` and enable VAAPI in Jellyfin's dashboard.
+
+**Home Assistant can't discover devices:**
+Switch to host networking — see the comments in `stacks/homeassistant.yaml`.
+
+---
+
+*That's Phase 2, chummer. You've got a password manager, a full media
+pipeline, smart home control, and file sync across all your devices.
+The HP box just went from "nice DNS server" to "actual home
+infrastructure." Phase 3 is where things get really interesting —
+your own Git forge, metrics dashboards, and cloud storage replacement.
+But that's for another day.*
