@@ -79,7 +79,9 @@
 # Access at: http://SERVER_IP:8097
 # ---------------------------------------------------------------------------
 :8097 {
-	reverse_proxy qbittorrent:8080
+	reverse_proxy qbittorrent:8080 {
+		header_up Host {http.reverse_proxy.upstream.hostport}
+	}
 }
 
 # ---------------------------------------------------------------------------
