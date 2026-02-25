@@ -49,7 +49,7 @@
 # requires a secure context (HTTPS) for the Web Crypto API.
 # Your browser will warn once about the untrusted cert — accept it.
 # ---------------------------------------------------------------------------
-https://:8092 {
+{$SERVER_IP}:8092 {
 	tls internal
 	reverse_proxy vaultwarden:80
 }

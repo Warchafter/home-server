@@ -35,12 +35,14 @@ services:
       # Caddy stores TLS certificates and state here
       - caddy_data:/data
       - caddy_config:/config
+    environment:
+      # Server IP for Vaultwarden HTTPS (tls internal needs a hostname, not a bare port)
+      - SERVER_IP=${SERVER_IP:-localhost}
+      # Uncomment when switching to domain mode (see docs/adding-a-domain.md):
+      # - DOMAIN=${DOMAIN}
+      # - ACME_EMAIL=${ACME_EMAIL}
     networks:
       - proxy
-    # Uncomment when switching to domain mode (see docs/adding-a-domain.md):
-    # environment:
-    #   - DOMAIN=${DOMAIN}
-    #   - ACME_EMAIL=${ACME_EMAIL}
     healthcheck:
       test: ["CMD", "caddy", "version"]
       interval: 30s
