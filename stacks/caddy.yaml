@@ -20,7 +20,7 @@ services:
       - "8090:8090"       # Uptime Kuma
       - "8091:8091"       # AdGuard Home UI
       # --- Phase 2 ---
-      - "8092:8092"       # Vaultwarden (password manager)
+      # Vaultwarden serves its own HTTPS (ROCKET_TLS) — not proxied through Caddy
       - "8093:8093"       # Jellyfin (media server)
       - "8094:8094"       # Sonarr (TV management)
       - "8095:8095"       # Radarr (movie management)
@@ -35,12 +35,10 @@ services:
       # Caddy stores TLS certificates and state here
       - caddy_data:/data
       - caddy_config:/config
-    environment:
-      # Server IP for Vaultwarden HTTPS (tls internal needs a hostname, not a bare port)
-      - SERVER_IP=${SERVER_IP:-localhost}
-      # Uncomment when switching to domain mode (see docs/adding-a-domain.md):
-      # - DOMAIN=${DOMAIN}
-      # - ACME_EMAIL=${ACME_EMAIL}
+    # Uncomment when switching to domain mode (see docs/adding-a-domain.md):
+    # environment:
+    #   - DOMAIN=${DOMAIN}
+    #   - ACME_EMAIL=${ACME_EMAIL}
     networks:
       - proxy
     healthcheck:

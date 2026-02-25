@@ -413,7 +413,48 @@ create_media_dirs() {
 }
 
 # ---------------------------------------------------------------------------
-# Step 8: Check for hardware capabilities (Phase 2)
+# Step 8: Generate Vaultwarden TLS certificate
+# ---------------------------------------------------------------------------
+# Vaultwarden's web vault requires HTTPS (browser Web Crypto API needs a
+# secure context). We generate a self-signed cert so Vaultwarden can serve
+# HTTPS directly via ROCKET_TLS, bypassing Caddy for this one service.
+# ---------------------------------------------------------------------------
+
+generate_vaultwarden_cert() {
+    local ssl_dir="$REPO_DIR/vaultwarden/ssl"
+
+    if [ -f "$ssl_dir/cert.pem" ] && [ -f "$ssl_dir/key.pem" ]; then
+        ok "Vaultwarden TLS certificate already exists."
+        return
+    fi
+
+    info "Generating self-signed TLS certificate for Vaultwarden..."
+
+    # Use SERVER_IP from .env, fall back to detected IP, then localhost
+    local server_ip="$DETECTED_IP"
+    if [ -f "$REPO_DIR/.env" ]; then
+        local env_ip
+        env_ip=$(grep -E "^SERVER_IP=" "$REPO_DIR/.env" 2>/dev/null | cut -d'=' -f2 || true)
+        [ -n "$env_ip" ] && server_ip="$env_ip"
+    fi
+    server_ip="${server_ip:-127.0.0.1}"
+
+    mkdir -p "$ssl_dir"
+    openssl req -x509 -nodes -days 3650 \
+        -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
+        -keyout "$ssl_dir/key.pem" \
+        -out "$ssl_dir/cert.pem" \
+        -subj "/CN=Vaultwarden" \
+        -addext "subjectAltName=IP:${server_ip},IP:127.0.0.1,DNS:localhost" \
+        2>/dev/null
+
+    ok "Vaultwarden TLS certificate generated (valid 10 years, SAN: $server_ip)."
+    info "Access Vaultwarden at: https://$server_ip:8092"
+    info "Your browser will show a certificate warning — accept it."
+}
+
+# ---------------------------------------------------------------------------
+# Step 9: Check for hardware capabilities (Phase 2)
 # ---------------------------------------------------------------------------
 
 check_hardware() {
@@ -472,6 +513,8 @@ main() {
     setup_env
     echo ""
     create_media_dirs
+    echo ""
+    generate_vaultwarden_cert
     echo ""
     check_hardware
 

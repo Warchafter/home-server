@@ -43,18 +43,6 @@
 }
 
 # ---------------------------------------------------------------------------
-# Vaultwarden — password manager
-# Access at: https://SERVER_IP:8092
-# Uses a self-signed cert (tls internal) because Vaultwarden's web vault
-# requires a secure context (HTTPS) for the Web Crypto API.
-# Your browser will warn once about the untrusted cert — accept it.
-# ---------------------------------------------------------------------------
-{$SERVER_IP}:8092 {
-	tls internal
-	reverse_proxy vaultwarden:80
-}
-
-# ---------------------------------------------------------------------------
 # Jellyfin — media server
 # Access at: http://SERVER_IP:8093
 # ---------------------------------------------------------------------------
