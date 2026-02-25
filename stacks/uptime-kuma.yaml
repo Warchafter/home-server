@@ -29,7 +29,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3001 || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:3001/api/entry || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 15s
