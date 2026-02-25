@@ -32,7 +32,7 @@
 - Security:
     - Vaultwarden:
         icon: vaultwarden.png
-        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8092"
+        href: "https://{{HOMEPAGE_VAR_SERVER_IP}}:8092"
         description: Password manager
         server: local
         container: vaultwarden

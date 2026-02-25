@@ -11,13 +11,12 @@
 #      This prevents anyone else from creating accounts on your server.
 #
 # HTTPS NOTE:
-#   Vaultwarden works over HTTP on LAN, but Bitwarden mobile apps and browser
-#   extensions prefer HTTPS. Options:
-#   - Use Tailscale's MagicDNS HTTPS (easiest)
-#   - Add a domain and enable HTTPS in Caddy (see docs/adding-a-domain.md)
-#   - For local-only use, HTTP is fine
+#   Caddy serves this with a self-signed certificate (tls internal) because the
+#   Vaultwarden web vault requires HTTPS for the browser's Web Crypto API.
+#   Your browser will show a one-time certificate warning — accept it.
+#   For mobile apps, consider Tailscale MagicDNS HTTPS or a real domain.
 #
-# Access at: http://SERVER_IP:8092 (routed through Caddy)
+# Access at: https://SERVER_IP:8092 (HTTPS via Caddy self-signed cert)
 # =============================================================================
 
 services:
