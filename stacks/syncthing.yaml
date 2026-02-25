@@ -35,8 +35,10 @@ services:
       # Local discovery — helps devices find each other on the same LAN
       - "21027:21027/udp"
     volumes:
-      # Syncthing identity, keys, and configuration
-      - syncthing_config:/var/syncthing/config
+      # Syncthing home dir (identity, keys, config live in /var/syncthing/config)
+      # Must mount at /var/syncthing, NOT /var/syncthing/config — the entrypoint
+      # needs to own the parent directory to set permissions correctly.
+      - syncthing_config:/var/syncthing
       # Synchronized files — point this at wherever you want synced data
       - ${SYNCTHING_DATA_PATH:-/srv/syncthing}:/sync
     networks:
