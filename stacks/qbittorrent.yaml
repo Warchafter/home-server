@@ -1,0 +1,66 @@
+# =============================================================================
+# qBittorrent - Download Client
+# =============================================================================
+# qBittorrent handles downloads for Sonarr and Radarr. It runs headless with
+# a web UI for management.
+#
+# FIRST RUN:
+#   1. The default username is 'admin'
+#   2. A RANDOM password is generated on first launch. Find it with:
+#      docker compose logs qbittorrent | grep "temporary password"
+#   3. Log in at http://SERVER_IP:8097 and change the password immediately
+#      (Tools > Options > Web UI > Authentication)
+#   4. Add your credentials to .env (QBITTORRENT_USER / QBITTORRENT_PASS)
+#      for the Homepage dashboard widget
+#
+# DOWNLOAD PATHS (important for hardlinks):
+#   Configure these in the qBittorrent web UI (Tools > Options > Downloads):
+#   - Default save path: /media/downloads/complete
+#   - Keep incomplete torrents in: /media/downloads/incomplete
+#   Then set up categories (right-click in sidebar > New Category):
+#   - Category "movies" → save path: /media/downloads/complete/movies
+#   - Category "tv"     → save path: /media/downloads/complete/tv
+#
+# VPN (optional, not included):
+#   To route downloads through a VPN, add Gluetun and set:
+#     network_mode: "service:gluetun"
+#   See: https://github.com/qdm12/gluetun-wiki
+#
+# Access at: http://SERVER_IP:8097 (routed through Caddy)
+# =============================================================================
+
+services:
+  qbittorrent:
+    image: linuxserver/qbittorrent:5.1.4
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - WEBUI_PORT=8080
+    volumes:
+      # App config, torrent state, resume data
+      - qbittorrent_config:/config
+      # Media root — must match the same mount in Sonarr/Radarr for hardlinks
+      - ${MEDIA_PATH:-/srv/media}:/media
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v2/app/version || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  qbittorrent_config:
+    name: qbittorrent_config
+
+networks:
+  proxy:
+    external: true

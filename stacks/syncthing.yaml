@@ -1,0 +1,61 @@
+# =============================================================================
+# Syncthing - File Synchronization
+# =============================================================================
+# Syncthing keeps folders in sync between your devices — phone, laptop,
+# server — without relying on any cloud service. Files stay on your hardware.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8099 to access the Syncthing web UI
+#   2. Install Syncthing on your other devices (phone, laptop)
+#   3. Add this server as a remote device using its Device ID
+#      (shown in Actions > Show ID in the web UI)
+#   4. Share folders between devices
+#
+# PORTS:
+#   - 8384 (web UI) — proxied through Caddy on port 8099
+#   - 22000/tcp — sync protocol (direct, not through Caddy)
+#   - 21027/udp — local discovery (direct, not through Caddy)
+#
+# Access at: http://SERVER_IP:8099 (routed through Caddy)
+# =============================================================================
+
+services:
+  syncthing:
+    image: syncthing/syncthing:1.29
+    container_name: syncthing
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      # Bind GUI to all interfaces so Caddy can reach it on the Docker network.
+      # Without this, the GUI only listens on localhost inside the container.
+      - STGUIADDRESS=0.0.0.0:8384
+    ports:
+      # Sync protocol — other Syncthing devices connect here directly
+      - "22000:22000/tcp"
+      # Local discovery — helps devices find each other on the same LAN
+      - "21027:21027/udp"
+    volumes:
+      # Syncthing identity, keys, and configuration
+      - syncthing_config:/var/syncthing/config
+      # Synchronized files — point this at wherever you want synced data
+      - ${SYNCTHING_DATA_PATH:-/srv/syncthing}:/sync
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8384/rest/noauth/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  syncthing_config:
+    name: syncthing_config
+
+networks:
+  proxy:
+    external: true

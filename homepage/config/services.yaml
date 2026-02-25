@@ -29,6 +29,91 @@
         href: https://login.tailscale.com/admin/machines
         description: Remote access VPN (runs on host, no container status)
 
+- Security:
+    - Vaultwarden:
+        icon: vaultwarden.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8092"
+        description: Password manager
+        server: local
+        container: vaultwarden
+
+- Media:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8093"
+        description: Media server
+        server: local
+        container: jellyfin
+        widget:
+          type: jellyfin
+          url: http://jellyfin:8096
+          key: "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}"
+
+    - Sonarr:
+        icon: sonarr.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8094"
+        description: TV show management
+        server: local
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://sonarr:8989
+          key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+
+    - Radarr:
+        icon: radarr.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8095"
+        description: Movie management
+        server: local
+        container: radarr
+        widget:
+          type: radarr
+          url: http://radarr:7878
+          key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+
+    - Prowlarr:
+        icon: prowlarr.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8096"
+        description: Indexer manager
+        server: local
+        container: prowlarr
+        widget:
+          type: prowlarr
+          url: http://prowlarr:9696
+          key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
+
+    - qBittorrent:
+        icon: qbittorrent.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8097"
+        description: Download client
+        server: local
+        container: qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://qbittorrent:8080
+          username: "{{HOMEPAGE_VAR_QBITTORRENT_USER}}"
+          password: "{{HOMEPAGE_VAR_QBITTORRENT_PASS}}"
+
+- Smart Home:
+    - Home Assistant:
+        icon: home-assistant.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8098"
+        description: Smart home automation
+        server: local
+        container: homeassistant
+        widget:
+          type: homeassistant
+          url: http://homeassistant:8123
+          key: "{{HOMEPAGE_VAR_HOMEASSISTANT_API_KEY}}"
+
+- File Sync:
+    - Syncthing:
+        icon: syncthing.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8099"
+        description: File synchronization
+        server: local
+        container: syncthing
+
 - Monitoring:
     - Uptime Kuma:
         icon: uptime-kuma.png

@@ -89,7 +89,9 @@ persistent data (AdGuard config, Uptime Kuma monitors, Caddy certificates).
 Back up these critical items regularly:
 - This Git repo (it's your entire server config)
 - The `.env` file (not in git — copy it somewhere safe)
-- Docker volumes: `adguard_conf`, `adguard_work`, `uptime_kuma_data`, `caddy_data`, `caddy_config`
+- Docker volumes (Phase 1): `adguard_conf`, `adguard_work`, `uptime_kuma_data`, `caddy_data`, `caddy_config`
+- Docker volumes (Phase 2): `vaultwarden_data`, `jellyfin_config`, `sonarr_config`, `radarr_config`, `prowlarr_config`, `qbittorrent_config`, `homeassistant_config`, `syncthing_config`
+- Bind mount directories: `MEDIA_PATH` (media library), `SYNCTHING_DATA_PATH` (synced files)
 
 To dump a volume to a tarball:
 ```bash

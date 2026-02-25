@@ -7,6 +7,18 @@ layout:
   Infrastructure:
     style: row
     columns: 3
+  Security:
+    style: row
+    columns: 2
+  Media:
+    style: row
+    columns: 3
+  Smart Home:
+    style: row
+    columns: 2
+  File Sync:
+    style: row
+    columns: 2
   Monitoring:
     style: row
     columns: 2

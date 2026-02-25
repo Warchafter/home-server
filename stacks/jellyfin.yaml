@@ -1,0 +1,66 @@
+# =============================================================================
+# Jellyfin - Media Server
+# =============================================================================
+# Jellyfin streams your movies, TV shows, and music to any device. It's a
+# free, open-source alternative to Plex with no account or subscription needed.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8093 to run the setup wizard
+#   2. Create an admin account
+#   3. Add media libraries:
+#      - Movies → /media/movies
+#      - TV Shows → /media/tv
+#   4. Install Jellyfin apps on your devices (phone, TV, etc.)
+#   5. Add your API key to .env (JELLYFIN_API_KEY) for the Homepage widget
+#      Generate in: Dashboard > API Keys > Add
+#
+# HARDWARE TRANSCODING:
+#   The HP desktop likely has an Intel iGPU that can hardware-transcode video.
+#   To enable it:
+#   1. Check if /dev/dri exists: ls -la /dev/dri/
+#   2. Add your user to the 'render' group: sudo usermod -aG render $USER
+#   3. Uncomment the 'devices' section below
+#   4. In Jellyfin: Dashboard > Playback > Transcoding > Hardware acceleration
+#      → Select "Video Acceleration API (VAAPI)"
+#      → Device: /dev/dri/renderD128
+#
+# Access at: http://SERVER_IP:8093 (routed through Caddy)
+# =============================================================================
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.6
+    container_name: jellyfin
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      # Tells clients the server's address for direct connections
+      - JELLYFIN_PublishedServerUrl=${SERVER_IP:-localhost}
+    volumes:
+      # Server config, metadata cache, database
+      - jellyfin_config:/config
+      # Media library — read-only because Jellyfin only reads, never writes media
+      - ${MEDIA_PATH:-/srv/media}:/media:ro
+    networks:
+      - proxy
+    # Uncomment for hardware transcoding (Intel VAAPI/QSV):
+    # devices:
+    #   - /dev/dri:/dev/dri
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1024m
+
+volumes:
+  jellyfin_config:
+    name: jellyfin_config
+
+networks:
+  proxy:
+    external: true

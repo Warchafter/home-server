@@ -1,0 +1,60 @@
+# =============================================================================
+# Sonarr - TV Show Management
+# =============================================================================
+# Sonarr monitors for new TV episodes, searches indexers (via Prowlarr),
+# sends downloads to qBittorrent, and organizes completed files into your
+# media library for Jellyfin to serve.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8094 and set up authentication
+#   2. Add a root folder: Settings > Media Management > Root Folders
+#      → Path: /media/tv
+#   3. Connect the download client: Settings > Download Clients > Add
+#      → qBittorrent, Host: qbittorrent, Port: 8080
+#      → Category: tv (must match the qBittorrent category you created)
+#   4. Indexers are synced automatically from Prowlarr
+#   5. Add your API key to .env (SONARR_API_KEY) for the Homepage widget
+#      Find it in: Settings > General > API Key
+#
+# HARDLINKS:
+#   Sonarr and qBittorrent both mount ${MEDIA_PATH} at /media. This lets
+#   Sonarr create hardlinks when importing (instant, zero extra disk space)
+#   instead of copying files.
+#
+# Access at: http://SERVER_IP:8094 (routed through Caddy)
+# =============================================================================
+
+services:
+  sonarr:
+    image: linuxserver/sonarr:4.0.16
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    volumes:
+      # App config, database, logs
+      - sonarr_config:/config
+      # Media root — same mount as qBittorrent/Radarr/Jellyfin for hardlinks
+      - ${MEDIA_PATH:-/srv/media}:/media
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8989/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  sonarr_config:
+    name: sonarr_config
+
+networks:
+  proxy:
+    external: true

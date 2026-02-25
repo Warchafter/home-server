@@ -1,0 +1,68 @@
+# =============================================================================
+# Home Assistant - Smart Home Automation
+# =============================================================================
+# Home Assistant lets you control and automate smart home devices from a
+# single dashboard. Supports thousands of integrations (lights, sensors,
+# switches, cameras, etc.).
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8098 to run the onboarding wizard
+#   2. Create your admin account and configure your home
+#   3. Add integrations for your devices (Settings > Devices & Services)
+#
+# NETWORK MODE:
+#   By default, HA runs on the Docker bridge network (proxy). This works
+#   for most integrations (Wi-Fi devices, cloud-connected devices).
+#
+#   If device auto-discovery doesn't work (mDNS/SSDP for Chromecast,
+#   Sonos, Hue bridge, etc.), switch to host networking by:
+#   1. Uncommenting 'network_mode: host' below
+#   2. Commenting out the 'networks:' and 'ports:' sections
+#   3. Update Caddyfile to proxy to SERVER_IP:8123 instead of homeassistant:8123
+#
+# USB DEVICES (Zigbee/Z-Wave):
+#   If you have a Zigbee coordinator (ConBee, Sonoff, etc.) or Z-Wave stick:
+#   1. Plug it into the HP server
+#   2. Find the device path: ls /dev/ttyUSB* /dev/ttyACM*
+#   3. Uncomment the 'devices' section below with the correct path
+#
+# Access at: http://SERVER_IP:8098 (routed through Caddy)
+# =============================================================================
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:2026.2
+    container_name: homeassistant
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+    volumes:
+      # All HA config: automations, scenes, database, integrations
+      - homeassistant_config:/config
+    networks:
+      - proxy
+    # Uncomment for device auto-discovery (mDNS/SSDP). When using host
+    # networking, comment out the 'networks:' section above.
+    # network_mode: host
+    # Uncomment to pass through USB devices (Zigbee/Z-Wave dongles):
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0   # Common Zigbee coordinator path
+    #   - /dev/ttyACM0:/dev/ttyACM0   # Alternative device path
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8123/manifest.json || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+volumes:
+  homeassistant_config:
+    name: homeassistant_config
+
+networks:
+  proxy:
+    external: true

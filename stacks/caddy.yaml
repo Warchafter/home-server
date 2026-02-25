@@ -15,9 +15,19 @@ services:
     container_name: caddy
     restart: unless-stopped
     ports:
+      # --- Phase 1 ---
       - "80:80"           # Homepage dashboard (landing page)
-      - "8090:8090"       # Uptime Kuma (via Caddy)
-      - "8091:8091"       # AdGuard Home UI (via Caddy)
+      - "8090:8090"       # Uptime Kuma
+      - "8091:8091"       # AdGuard Home UI
+      # --- Phase 2 ---
+      - "8092:8092"       # Vaultwarden (password manager)
+      - "8093:8093"       # Jellyfin (media server)
+      - "8094:8094"       # Sonarr (TV management)
+      - "8095:8095"       # Radarr (movie management)
+      - "8096:8096"       # Prowlarr (indexer manager)
+      - "8097:8097"       # qBittorrent (download client)
+      - "8098:8098"       # Home Assistant (smart home)
+      - "8099:8099"       # Syncthing (file sync)
       # - "443:443"       # HTTPS — uncomment when you add a domain
     volumes:
       # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/

@@ -14,10 +14,20 @@
 # =============================================================================
 
 include:
+  # --- Phase 1: Foundation ---
   - path: stacks/caddy.yaml
   - path: stacks/adguard.yaml
   - path: stacks/uptime-kuma.yaml
   - path: stacks/homepage.yaml
+  # --- Phase 2: Core Services ---
+  - path: stacks/vaultwarden.yaml
+  - path: stacks/jellyfin.yaml
+  - path: stacks/sonarr.yaml
+  - path: stacks/radarr.yaml
+  - path: stacks/prowlarr.yaml
+  - path: stacks/qbittorrent.yaml
+  - path: stacks/homeassistant.yaml
+  - path: stacks/syncthing.yaml
 
 # =============================================================================
 # Shared Networks

@@ -376,6 +376,69 @@ setup_env() {
 }
 
 # ---------------------------------------------------------------------------
+# Step 7: Create media and sync directories (Phase 2)
+# ---------------------------------------------------------------------------
+# These directories must exist before Docker Compose creates bind mounts,
+# otherwise Docker creates them as root-owned and containers can't write.
+# ---------------------------------------------------------------------------
+
+create_media_dirs() {
+    # Read paths from .env if it exists, otherwise use defaults
+    local media_path
+    local sync_path
+    if [ -f "$REPO_DIR/.env" ]; then
+        media_path=$(grep -E "^MEDIA_PATH=" "$REPO_DIR/.env" 2>/dev/null | cut -d'=' -f2 || echo "/srv/media")
+        sync_path=$(grep -E "^SYNCTHING_DATA_PATH=" "$REPO_DIR/.env" 2>/dev/null | cut -d'=' -f2 || echo "/srv/syncthing")
+    fi
+    media_path="${media_path:-/srv/media}"
+    sync_path="${sync_path:-/srv/syncthing}"
+
+    info "Creating media directory structure at $media_path..."
+    if [ -d "$media_path/movies" ] && [ -d "$media_path/tv" ]; then
+        ok "Media directories already exist."
+    else
+        sudo mkdir -p "$media_path"/{movies,tv,downloads/{complete/{movies,tv},incomplete}}
+        sudo chown -R "$(id -u):$(id -g)" "$media_path"
+        ok "Media directories created."
+    fi
+
+    info "Creating Syncthing data directory at $sync_path..."
+    if [ -d "$sync_path" ]; then
+        ok "Syncthing directory already exists."
+    else
+        sudo mkdir -p "$sync_path"
+        sudo chown -R "$(id -u):$(id -g)" "$sync_path"
+        ok "Syncthing directory created."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Step 8: Check for hardware capabilities (Phase 2)
+# ---------------------------------------------------------------------------
+
+check_hardware() {
+    # Check for Intel GPU (Jellyfin hardware transcoding)
+    if [ -e /dev/dri/renderD128 ]; then
+        ok "Intel/AMD GPU detected at /dev/dri/renderD128."
+        info "To enable Jellyfin hardware transcoding, uncomment the 'devices' section in stacks/jellyfin.yaml"
+        if ! groups "$USER" | grep -q render; then
+            warn "Add yourself to the 'render' group for GPU access: sudo usermod -aG render $USER"
+        else
+            ok "User $USER is in the 'render' group."
+        fi
+    else
+        info "No GPU detected at /dev/dri. Jellyfin will use software transcoding."
+    fi
+
+    # Check for USB devices (Home Assistant Zigbee/Z-Wave dongles)
+    if ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | head -1 > /dev/null; then
+        ok "USB serial devices detected:"
+        ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null
+        info "To use with Home Assistant, uncomment the 'devices' section in stacks/homeassistant.yaml"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -407,6 +470,10 @@ main() {
     detect_server_ip
     echo ""
     setup_env
+    echo ""
+    create_media_dirs
+    echo ""
+    check_hardware
 
     echo ""
     echo "=========================================="

@@ -25,6 +25,14 @@ services:
       # AdGuard credentials for widget (set after completing AdGuard wizard)
       - HOMEPAGE_VAR_ADGUARD_USER=${ADGUARD_USER:-}
       - HOMEPAGE_VAR_ADGUARD_PASS=${ADGUARD_PASS:-}
+      # Phase 2 widget API keys (set after first launch of each service)
+      - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+      - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY:-}
+      - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY:-}
+      - HOMEPAGE_VAR_PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
+      - HOMEPAGE_VAR_QBITTORRENT_USER=${QBITTORRENT_USER:-admin}
+      - HOMEPAGE_VAR_QBITTORRENT_PASS=${QBITTORRENT_PASS:-}
+      - HOMEPAGE_VAR_HOMEASSISTANT_API_KEY=${HOMEASSISTANT_API_KEY:-}
       - TZ=${TZ:-UTC}
     volumes:
       # Dashboard config files (we version-control these in the repo)

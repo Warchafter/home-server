@@ -8,10 +8,18 @@ Config-as-code for a personal home server running Docker Compose on an HP SFF de
 HP Desktop (Linux)
 ├── Tailscale (host-level VPN — not a container)
 ├── Docker Engine + Compose v2
-│   ├── Caddy          ─ reverse proxy (ports 80, 8090, 8091)
+│   ├── Caddy          ─ reverse proxy (ports 80, 8090-8099)
 │   ├── AdGuard Home   ─ DNS + ad blocking (port 53)
 │   ├── Uptime Kuma    ─ uptime monitoring (via Caddy :8090)
-│   └── Homepage       ─ dashboard (via Caddy :80)
+│   ├── Homepage       ─ dashboard (via Caddy :80)
+│   ├── Vaultwarden    ─ password manager (via Caddy :8092)
+│   ├── Jellyfin       ─ media server (via Caddy :8093)
+│   ├── Sonarr         ─ TV show management (via Caddy :8094)
+│   ├── Radarr         ─ movie management (via Caddy :8095)
+│   ├── Prowlarr       ─ indexer manager (via Caddy :8096)
+│   ├── qBittorrent    ─ download client (via Caddy :8097)
+│   ├── Home Assistant ─ smart home automation (via Caddy :8098)
+│   └── Syncthing      ─ file sync (via Caddy :8099)
 ```
 
 ## Quick Start
@@ -30,6 +38,7 @@ bash scripts/setup.sh
 nano .env
 
 # 5. Start everything:
+docker network create proxy
 docker compose up -d
 
 # 6. FIRST RUN: Complete AdGuard setup wizard at http://SERVER_IP:3000
@@ -47,6 +56,14 @@ Then open `http://<SERVER_IP>` for the dashboard.
 | AdGuard Home | `http://SERVER_IP:8091` | DNS admin panel + ad blocking stats |
 | AdGuard Setup | `http://SERVER_IP:3000` | One-time setup wizard (first run only) |
 | AdGuard DNS | `SERVER_IP:53` | Network-wide ad blocking (point router here) |
+| Vaultwarden | `http://SERVER_IP:8092` | Password manager (Bitwarden-compatible) |
+| Jellyfin | `http://SERVER_IP:8093` | Media server (movies, TV, music) |
+| Sonarr | `http://SERVER_IP:8094` | TV show management & automation |
+| Radarr | `http://SERVER_IP:8095` | Movie management & automation |
+| Prowlarr | `http://SERVER_IP:8096` | Indexer manager for Sonarr/Radarr |
+| qBittorrent | `http://SERVER_IP:8097` | Download client |
+| Home Assistant | `http://SERVER_IP:8098` | Smart home automation |
+| Syncthing | `http://SERVER_IP:8099` | File sync across devices |
 | Tailscale | Host-level | Secure remote access from anywhere via VPN |
 
 ## Project Structure
@@ -55,10 +72,18 @@ Then open `http://<SERVER_IP>` for the dashboard.
 ├── compose.yaml          # Root — includes all stacks
 ├── .env.example          # Environment variable template
 ├── stacks/               # Per-service Docker Compose files
-│   ├── caddy.yaml
+│   ├── caddy.yaml        # Phase 1
 │   ├── adguard.yaml
 │   ├── uptime-kuma.yaml
-│   └── homepage.yaml
+│   ├── homepage.yaml
+│   ├── vaultwarden.yaml  # Phase 2
+│   ├── jellyfin.yaml
+│   ├── sonarr.yaml
+│   ├── radarr.yaml
+│   ├── prowlarr.yaml
+│   ├── qbittorrent.yaml
+│   ├── homeassistant.yaml
+│   └── syncthing.yaml
 ├── caddy/
 │   └── Caddyfile         # Reverse proxy rules
 ├── homepage/config/      # Dashboard configuration
@@ -69,6 +94,6 @@ Then open `http://<SERVER_IP>` for the dashboard.
 
 ## Roadmap
 
-- **Phase 1** (current): Foundation — Caddy, AdGuard, Tailscale, Uptime Kuma, Homepage
-- **Phase 2**: Core services — Vaultwarden, Jellyfin, *arr stack, Home Assistant, Syncthing
+- **Phase 1** (complete): Foundation — Caddy, AdGuard, Tailscale, Uptime Kuma, Homepage
+- **Phase 2** (current): Core services — Vaultwarden, Jellyfin, *arr stack, Home Assistant, Syncthing
 - **Phase 3**: Advanced — Forgejo, Prometheus/Grafana, Nextcloud, WireGuard

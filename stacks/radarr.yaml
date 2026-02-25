@@ -1,0 +1,60 @@
+# =============================================================================
+# Radarr - Movie Management
+# =============================================================================
+# Radarr monitors for movies, searches indexers (via Prowlarr), sends
+# downloads to qBittorrent, and organizes completed files into your media
+# library for Jellyfin to serve.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8095 and set up authentication
+#   2. Add a root folder: Settings > Media Management > Root Folders
+#      → Path: /media/movies
+#   3. Connect the download client: Settings > Download Clients > Add
+#      → qBittorrent, Host: qbittorrent, Port: 8080
+#      → Category: movies (must match the qBittorrent category you created)
+#   4. Indexers are synced automatically from Prowlarr
+#   5. Add your API key to .env (RADARR_API_KEY) for the Homepage widget
+#      Find it in: Settings > General > API Key
+#
+# HARDLINKS:
+#   Radarr and qBittorrent both mount ${MEDIA_PATH} at /media. This lets
+#   Radarr create hardlinks when importing (instant, zero extra disk space)
+#   instead of copying files.
+#
+# Access at: http://SERVER_IP:8095 (routed through Caddy)
+# =============================================================================
+
+services:
+  radarr:
+    image: linuxserver/radarr:6.0.4
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    volumes:
+      # App config, database, logs
+      - radarr_config:/config
+      # Media root — same mount as qBittorrent/Sonarr/Jellyfin for hardlinks
+      - ${MEDIA_PATH:-/srv/media}:/media
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7878/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  radarr_config:
+    name: radarr_config
+
+networks:
+  proxy:
+    external: true

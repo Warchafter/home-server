@@ -1,0 +1,51 @@
+# =============================================================================
+# Prowlarr - Indexer Manager
+# =============================================================================
+# Prowlarr manages indexers (search sources) for Sonarr and Radarr. Instead of
+# configuring indexers in each app separately, you add them once in Prowlarr
+# and it syncs them to all connected apps.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8096 and set up authentication
+#   2. Add indexers (Indexers > Add Indexer)
+#   3. Connect to Sonarr and Radarr (Settings > Apps > Add Application):
+#      - Sonarr URL: http://sonarr:8989
+#      - Radarr URL: http://radarr:7878
+#      - API keys: find them in each app's Settings > General
+#   4. Prowlarr auto-syncs indexers to connected apps
+#
+# Access at: http://SERVER_IP:8096 (routed through Caddy)
+# =============================================================================
+
+services:
+  prowlarr:
+    image: linuxserver/prowlarr:2.3.0
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    volumes:
+      # App config and indexer database (no media mount needed)
+      - prowlarr_config:/config
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9696/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  prowlarr_config:
+    name: prowlarr_config
+
+networks:
+  proxy:
+    external: true

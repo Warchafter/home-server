@@ -1,0 +1,54 @@
+# =============================================================================
+# Vaultwarden - Password Manager
+# =============================================================================
+# A lightweight, self-hosted Bitwarden-compatible password manager written in
+# Rust. Works with all official Bitwarden apps and browser extensions.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8092 and create your account
+#   2. IMPORTANT: After creating your account, set VAULTWARDEN_SIGNUPS_ALLOWED=false
+#      in .env and run: docker compose up -d vaultwarden
+#      This prevents anyone else from creating accounts on your server.
+#
+# HTTPS NOTE:
+#   Vaultwarden works over HTTP on LAN, but Bitwarden mobile apps and browser
+#   extensions prefer HTTPS. Options:
+#   - Use Tailscale's MagicDNS HTTPS (easiest)
+#   - Add a domain and enable HTTPS in Caddy (see docs/adding-a-domain.md)
+#   - For local-only use, HTTP is fine
+#
+# Access at: http://SERVER_IP:8092 (routed through Caddy)
+# =============================================================================
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:1.35.4
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      # Allow new account registrations. Set to 'false' after creating your account!
+      - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED:-true}
+    volumes:
+      # All vault data: encrypted passwords, attachments, config, SQLite database
+      - vaultwarden_data:/data
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80/alive || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+volumes:
+  vaultwarden_data:
+    name: vaultwarden_data
+
+networks:
+  proxy:
+    external: true

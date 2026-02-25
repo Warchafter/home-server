@@ -42,6 +42,72 @@
 	reverse_proxy adguard:80
 }
 
+# ---------------------------------------------------------------------------
+# Vaultwarden — password manager
+# Access at: http://SERVER_IP:8092
+# ---------------------------------------------------------------------------
+:8092 {
+	reverse_proxy vaultwarden:80
+}
+
+# ---------------------------------------------------------------------------
+# Jellyfin — media server
+# Access at: http://SERVER_IP:8093
+# ---------------------------------------------------------------------------
+:8093 {
+	reverse_proxy jellyfin:8096
+}
+
+# ---------------------------------------------------------------------------
+# Sonarr — TV show management
+# Access at: http://SERVER_IP:8094
+# ---------------------------------------------------------------------------
+:8094 {
+	reverse_proxy sonarr:8989
+}
+
+# ---------------------------------------------------------------------------
+# Radarr — movie management
+# Access at: http://SERVER_IP:8095
+# ---------------------------------------------------------------------------
+:8095 {
+	reverse_proxy radarr:7878
+}
+
+# ---------------------------------------------------------------------------
+# Prowlarr — indexer manager
+# Access at: http://SERVER_IP:8096
+# ---------------------------------------------------------------------------
+:8096 {
+	reverse_proxy prowlarr:9696
+}
+
+# ---------------------------------------------------------------------------
+# qBittorrent — download client
+# Access at: http://SERVER_IP:8097
+# ---------------------------------------------------------------------------
+:8097 {
+	reverse_proxy qbittorrent:8080
+}
+
+# ---------------------------------------------------------------------------
+# Home Assistant — smart home automation
+# Access at: http://SERVER_IP:8098
+# NOTE: If you switch HA to network_mode: host, change the target to
+# SERVER_IP:8123 (the container name won't resolve on host networking).
+# ---------------------------------------------------------------------------
+:8098 {
+	reverse_proxy homeassistant:8123
+}
+
+# ---------------------------------------------------------------------------
+# Syncthing — file synchronization
+# Access at: http://SERVER_IP:8099
+# ---------------------------------------------------------------------------
+:8099 {
+	reverse_proxy syncthing:8384
+}
+
 # =============================================================================
 # DOMAIN MODE (uncomment when you have a domain)
 # See docs/adding-a-domain.md for step-by-step instructions.
@@ -69,4 +135,36 @@
 #
 # adguard.home.{env.DOMAIN} {
 #     reverse_proxy adguard:80
+# }
+#
+# vault.home.{env.DOMAIN} {
+#     reverse_proxy vaultwarden:80
+# }
+#
+# media.home.{env.DOMAIN} {
+#     reverse_proxy jellyfin:8096
+# }
+#
+# sonarr.home.{env.DOMAIN} {
+#     reverse_proxy sonarr:8989
+# }
+#
+# radarr.home.{env.DOMAIN} {
+#     reverse_proxy radarr:7878
+# }
+#
+# prowlarr.home.{env.DOMAIN} {
+#     reverse_proxy prowlarr:9696
+# }
+#
+# qbit.home.{env.DOMAIN} {
+#     reverse_proxy qbittorrent:8080
+# }
+#
+# ha.home.{env.DOMAIN} {
+#     reverse_proxy homeassistant:8123
+# }
+#
+# sync.home.{env.DOMAIN} {
+#     reverse_proxy syncthing:8384
 # }
