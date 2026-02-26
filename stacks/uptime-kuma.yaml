@@ -22,6 +22,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - SETUID
+      - SETGID
     volumes:
       # Monitoring data is stored in SQLite inside this volume
       - uptime_kuma_data:/app/data

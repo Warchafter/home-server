@@ -28,6 +28,12 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
     environment:
       - TZ=${TZ:-UTC}
       # Bind GUI to all interfaces so Caddy can reach it on the Docker network.
