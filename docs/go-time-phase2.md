@@ -182,7 +182,7 @@ Open `http://THE_IP:8094`
    → Path: `/media/tv`
 3. Connect download client: Settings > Download Clients > Add
    → Type: qBittorrent
-   → Host: `qbittorrent`, Port: `8080`
+   → Host: `gluetun`, Port: `8080`
    → Username/password from what you set in qBittorrent
    → Category: `tv`
 4. Note your API key: Settings > General > API Key (you'll need it later)
@@ -203,7 +203,7 @@ Open `http://THE_IP:8095`
    → Path: `/media/movies`
 3. Connect download client: Settings > Download Clients > Add
    → Type: qBittorrent
-   → Host: `qbittorrent`, Port: `8080`
+   → Host: `gluetun`, Port: `8080`
    → Username/password from qBittorrent
    → Category: `movies`
 4. Note your API key: Settings > General > API Key
@@ -228,9 +228,10 @@ Open `http://THE_IP:8093`
    (you'll need this for the Homepage widget)
 5. Install Jellyfin apps on your phone/TV/Roku/whatever
 
-*If you have an Intel GPU in the HP and want hardware transcoding:
-uncomment the `devices` section in `stacks/jellyfin.yaml`, then
-`docker compose up -d jellyfin`. See the comments in that file.*
+*Hardware transcoding is enabled by default — the HP's AMD Radeon
+Vega 11 iGPU is passed through via `/dev/dri`. To activate it in
+Jellyfin: Dashboard > Playback > Transcoding > select "VAAPI",
+device `/dev/dri/renderD128`. See `stacks/jellyfin.yaml` for details.*
 
 ---
 
