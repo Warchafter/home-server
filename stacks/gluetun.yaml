@@ -39,6 +39,8 @@ services:
     cap_add:
       - NET_ADMIN
       - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
