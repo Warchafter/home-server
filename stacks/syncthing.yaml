@@ -51,6 +51,9 @@ services:
       - syncthing_config:/var/syncthing
       # Synchronized files — point this at wherever you want synced data
       - ${SYNCTHING_DATA_PATH:-/srv/syncthing}:/sync
+      # Media root — allows syncing any subfolder (books, comics, etc.)
+      # without needing to add new volume mounts each time
+      - ${MEDIA_PATH:-/srv/media}:/srv/media
     networks:
       - proxy
     healthcheck:
