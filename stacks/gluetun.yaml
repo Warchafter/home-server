@@ -16,8 +16,10 @@
 # SETUP:
 #   1. Get your OpenVPN credentials from ProtonVPN dashboard:
 #      Account > OpenVPN / IKEv2 username
-#   2. Add to .env: PROTONVPN_USER and PROTONVPN_PASS
-#   3. docker compose up -d gluetun qbittorrent
+#   2. IMPORTANT: Append +pmp to your username for port forwarding.
+#      Example: if your username is "abc123", set PROTONVPN_USER=abc123+pmp
+#   3. Add to .env: PROTONVPN_USER and PROTONVPN_PASS
+#   4. docker compose up -d gluetun qbittorrent
 #
 # VERIFY VPN IS WORKING:
 #   docker exec gluetun wget -qO- https://ipinfo.io
@@ -48,6 +50,8 @@ services:
       # The port is saved to /tmp/gluetun/forwarded_port for qBittorrent.
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+      # Allow qBittorrent's web UI through Gluetun's firewall
+      - FIREWALL_INPUT_PORTS=8080
     # qBittorrent's web UI port — exposed here because qBittorrent shares
     # Gluetun's network stack (network_mode: service:gluetun)
     ports: []
