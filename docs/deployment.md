@@ -84,13 +84,20 @@ docker compose up -d --force-recreate
 **WARNING:** Never run `docker compose down -v` — the `-v` flag destroys all
 persistent data (AdGuard config, Uptime Kuma monitors, Caddy certificates).
 
-## Backup Reminder
+## Backups
 
-Back up these critical items regularly:
+**Vaultwarden (automated):** The `vaultwarden-backup` container runs daily
+at 2:00 AM, creating compressed SQLite backups in the `vaultwarden_backup`
+volume and keeping the last 30 days. Check backup status:
+```bash
+docker compose logs vaultwarden-backup
+```
+
+**Everything else (manual):** Back up these critical items regularly:
 - This Git repo (it's your entire server config)
 - The `.env` file (not in git — copy it somewhere safe)
 - Docker volumes (Phase 1): `adguard_conf`, `adguard_work`, `uptime_kuma_data`, `caddy_data`, `caddy_config`
-- Docker volumes (Phase 2): `vaultwarden_data`, `jellyfin_config`, `sonarr_config`, `radarr_config`, `prowlarr_config`, `qbittorrent_config`, `homeassistant_config`, `syncthing_config`
+- Docker volumes (Phase 2): `jellyfin_config`, `sonarr_config`, `radarr_config`, `prowlarr_config`, `qbittorrent_config`, `homeassistant_config`, `syncthing_config`
 - Bind mount directories: `MEDIA_PATH` (media library), `SYNCTHING_DATA_PATH` (synced files)
 
 To dump a volume to a tarball:

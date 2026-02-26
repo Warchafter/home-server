@@ -22,6 +22,7 @@ include:
   - path: stacks/homepage.yaml
   # --- Phase 2: Core Services ---
   - path: stacks/vaultwarden.yaml
+  - path: stacks/vaultwarden-backup.yaml
   - path: stacks/jellyfin.yaml
   - path: stacks/sonarr.yaml
   - path: stacks/radarr.yaml

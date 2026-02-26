@@ -30,8 +30,12 @@ services:
     image: vaultwarden/server:1.35.4
     container_name: vaultwarden
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
-      - "8092:80"
+      - "${SERVER_IP:?Set SERVER_IP in .env}:8092:80"
     environment:
       - TZ=${TZ:-UTC}
       # Allow new account registrations. Set to 'false' after creating your account!

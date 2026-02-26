@@ -18,6 +18,10 @@ services:
     image: louislam/uptime-kuma:1.23.16
     container_name: uptime-kuma
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       # Monitoring data is stored in SQLite inside this volume
       - uptime_kuma_data:/app/data

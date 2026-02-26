@@ -32,6 +32,10 @@ services:
     image: qmcgaw/gluetun:v3.41.1
     container_name: gluetun
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     cap_add:
       - NET_ADMIN
     devices:

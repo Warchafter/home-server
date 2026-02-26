@@ -24,6 +24,10 @@ services:
     image: syncthing/syncthing:1.29
     container_name: syncthing
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       - TZ=${TZ:-UTC}
       # Bind GUI to all interfaces so Caddy can reach it on the Docker network.
@@ -31,9 +35,9 @@ services:
       - STGUIADDRESS=0.0.0.0:8384
     ports:
       # Sync protocol — other Syncthing devices connect here directly
-      - "22000:22000/tcp"
+      - "${SERVER_IP:?Set SERVER_IP in .env}:22000:22000/tcp"
       # Local discovery — helps devices find each other on the same LAN
-      - "21027:21027/udp"
+      - "${SERVER_IP:?Set SERVER_IP in .env}:21027:21027/udp"
     volumes:
       # Syncthing home dir (identity, keys, config live in /var/syncthing/config)
       # Must mount at /var/syncthing, NOT /var/syncthing/config — the entrypoint

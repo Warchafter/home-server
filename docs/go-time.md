@@ -138,14 +138,14 @@ docker compose up -d
 ```
 
 Docker pulls the images (first run downloads ~400MB total) and starts
-all four containers. **This will take a couple minutes on first run.**
+all five containers. **This will take a couple minutes on first run.**
 
 Check that everything came up:
 ```bash
 docker compose ps
 ```
 
-You want to see all four services with `running` status. If something
+You want to see all five services with `running` status. If something
 says `restarting`, check its logs:
 ```bash
 docker compose logs adguard

@@ -35,6 +35,10 @@ services:
     image: linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     # Route ALL network traffic through Gluetun's VPN tunnel.
     # This replaces the 'networks' and 'ports' sections — qBittorrent
     # shares Gluetun's network namespace and uses its IP.

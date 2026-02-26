@@ -1,0 +1,78 @@
+# =============================================================================
+# Vaultwarden Backup - Automated Database Backup
+# =============================================================================
+# Creates consistent SQLite backups of Vaultwarden using sqlite3 .backup
+# (safe while the database is running). Backups are compressed and stored
+# in a local Docker volume, rotated automatically.
+#
+# SCHEDULE: Runs daily at 2:00 AM (configurable via CRON)
+# RETENTION: Keeps the last 30 days of backups
+#
+# VERIFY BACKUPS:
+#   docker compose logs vaultwarden-backup   # Check backup runs
+#   docker exec vaultwarden-backup ls /bitwarden/backup  # List backup files
+#
+# RESTORE:
+#   1. Stop Vaultwarden: docker compose stop vaultwarden
+#   2. Run restore:
+#      docker exec -it vaultwarden-backup restore
+#   3. Start Vaultwarden: docker compose up -d vaultwarden
+#
+# CLOUD BACKUP (optional):
+#   To also push backups to cloud storage (Backblaze B2, Google Drive, etc.):
+#   1. docker exec -it vaultwarden-backup rclone config
+#   2. Set up your remote and update RCLONE_REMOTE_NAME in this file
+#
+# See: https://github.com/ttionya/vaultwarden-backup
+# =============================================================================
+
+services:
+  vaultwarden-backup:
+    image: ttionya/vaultwarden-backup:1.26.2
+    container_name: vaultwarden-backup
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      vaultwarden:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ:-UTC}
+      # Backup schedule (cron syntax) — daily at 2:00 AM
+      - CRON=0 2 * * *
+      # Number of days to keep backups (30 = one month of daily backups)
+      - BACKUP_KEEP_DAYS=30
+      # Compress backups into zip files
+      - ZIP_ENABLE=TRUE
+      # Rclone remote name — matches the remote defined in vaultwarden/rclone.conf
+      - RCLONE_REMOTE_NAME=VaultwardenBackup
+      # Backup destination path on the rclone remote (the local volume)
+      - RCLONE_REMOTE_DIR=/bitwarden/backup
+      # Vaultwarden data directory inside this container
+      - DATA_DIR=/bitwarden/data
+    volumes:
+      # Vaultwarden data — read-only, we only need to read the SQLite database
+      - vaultwarden_data:/bitwarden/data:ro
+      # Backup output directory
+      - vaultwarden_backup:/bitwarden/backup
+      # Rclone config — pre-configured local remote (see vaultwarden/rclone.conf)
+      - ../vaultwarden/rclone.conf:/config/rclone/rclone.conf:ro
+    networks:
+      - proxy
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+volumes:
+  vaultwarden_data:
+    external: true
+    name: vaultwarden_data
+  vaultwarden_backup:
+    name: vaultwarden_backup
+
+networks:
+  proxy:
+    external: true

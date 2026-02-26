@@ -25,6 +25,10 @@ services:
     image: adguard/adguardhome:v0.107.54
     container_name: adguard
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       # DNS — must be reachable on the server's IP for other devices to use it.
       # Falls back to 127.0.0.1 (localhost only) if SERVER_IP is unset,

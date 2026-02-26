@@ -17,6 +17,10 @@ services:
     image: tecnativa/docker-socket-proxy:0.6.0
     container_name: dockerproxy
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       # Read-only access to containers and images (needed by Homepage)
       - CONTAINERS=1

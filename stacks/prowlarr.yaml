@@ -22,6 +22,10 @@ services:
     image: linuxserver/prowlarr:2.3.0
     container_name: prowlarr
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       - TZ=${TZ:-UTC}
       - PUID=${PUID:-1000}
