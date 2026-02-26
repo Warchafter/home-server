@@ -14,15 +14,21 @@
 #   5. Add your API key to .env (JELLYFIN_API_KEY) for the Homepage widget
 #      Generate in: Dashboard > API Keys > Add
 #
-# HARDWARE TRANSCODING:
-#   The HP desktop likely has an Intel iGPU that can hardware-transcode video.
-#   To enable it:
-#   1. Check if /dev/dri exists: ls -la /dev/dri/
-#   2. Add your user to the 'render' group: sudo usermod -aG render $USER
-#   3. Uncomment the 'devices' section below
-#   4. In Jellyfin: Dashboard > Playback > Transcoding > Hardware acceleration
+# HARDWARE TRANSCODING (AMD VAAPI):
+#   The HP desktop has an AMD Radeon Vega 11 iGPU for hardware-accelerated
+#   video transcoding. The /dev/dri device is passed through below.
+#
+#   SERVER SETUP (one-time):
+#   1. Verify /dev/dri exists: ls -la /dev/dri/
+#   2. Add your user to the render/video groups:
+#      sudo usermod -aG render,video $USER
+#   3. Log out and back in (or reboot)
+#
+#   JELLYFIN SETUP:
+#   1. Dashboard > Playback > Transcoding > Hardware acceleration
 #      → Select "Video Acceleration API (VAAPI)"
 #      → Device: /dev/dri/renderD128
+#   2. Enable hardware decoding for: H264, HEVC, VP9, AV1 (if supported)
 #
 # Access at: http://SERVER_IP:8093 (routed through Caddy)
 # =============================================================================
@@ -47,9 +53,8 @@ services:
       - ${MEDIA_PATH:-/srv/media}:/media:ro
     networks:
       - proxy
-    # Uncomment for hardware transcoding (Intel VAAPI/QSV):
-    # devices:
-    #   - /dev/dri:/dev/dri
+    devices:
+      - /dev/dri:/dev/dri
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8096/health || exit 1"]
       interval: 30s
