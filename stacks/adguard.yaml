@@ -31,8 +31,9 @@ services:
       # to avoid accidentally creating an open DNS resolver on all interfaces.
       - "${SERVER_IP:-127.0.0.1}:53:53/tcp"
       - "${SERVER_IP:-127.0.0.1}:53:53/udp"
-      # Setup wizard — only needed on first run. Comment out after setup.
-      - "${SERVER_IP:-127.0.0.1}:3000:3000"
+      # Setup wizard — only needed on first run. Uncomment temporarily if
+      # you need to re-run the wizard (e.g., after clearing the config volume).
+      # - "${SERVER_IP:-127.0.0.1}:3000:3000"
     volumes:
       - adguard_work:/opt/adguardhome/work
       - adguard_conf:/opt/adguardhome/conf

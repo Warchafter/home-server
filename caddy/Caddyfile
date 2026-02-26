@@ -18,10 +18,24 @@
 # =============================================================================
 
 # ---------------------------------------------------------------------------
+# Security Headers (shared snippet)
+# Applied to all proxied services for defense-in-depth.
+# ---------------------------------------------------------------------------
+(security_headers) {
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+# ---------------------------------------------------------------------------
 # Homepage Dashboard — the landing page
 # Access at: http://SERVER_IP (port 80)
 # ---------------------------------------------------------------------------
 :80 {
+	import security_headers
 	reverse_proxy homepage:3000
 }
 
@@ -30,6 +44,7 @@
 # Access at: http://SERVER_IP:8090
 # ---------------------------------------------------------------------------
 :8090 {
+	import security_headers
 	reverse_proxy uptime-kuma:3001
 }
 
@@ -39,6 +54,7 @@
 # Note: DNS itself runs on port 53 (separate from this web UI)
 # ---------------------------------------------------------------------------
 :8091 {
+	import security_headers
 	reverse_proxy adguard:80
 }
 
@@ -47,6 +63,7 @@
 # Access at: http://SERVER_IP:8093
 # ---------------------------------------------------------------------------
 :8093 {
+	import security_headers
 	reverse_proxy jellyfin:8096
 }
 
@@ -55,6 +72,7 @@
 # Access at: http://SERVER_IP:8094
 # ---------------------------------------------------------------------------
 :8094 {
+	import security_headers
 	reverse_proxy sonarr:8989
 }
 
@@ -63,6 +81,7 @@
 # Access at: http://SERVER_IP:8095
 # ---------------------------------------------------------------------------
 :8095 {
+	import security_headers
 	reverse_proxy radarr:7878
 }
 
@@ -71,6 +90,7 @@
 # Access at: http://SERVER_IP:8096
 # ---------------------------------------------------------------------------
 :8096 {
+	import security_headers
 	reverse_proxy prowlarr:9696
 }
 
@@ -80,6 +100,7 @@
 # Note: qBittorrent shares Gluetun's network, so we proxy to gluetun:8080
 # ---------------------------------------------------------------------------
 :8097 {
+	import security_headers
 	reverse_proxy gluetun:8080 {
 		header_up Host {http.reverse_proxy.upstream.hostport}
 	}
@@ -92,6 +113,7 @@
 # SERVER_IP:8123 (the container name won't resolve on host networking).
 # ---------------------------------------------------------------------------
 :8098 {
+	import security_headers
 	reverse_proxy homeassistant:8123
 }
 
@@ -100,6 +122,7 @@
 # Access at: http://SERVER_IP:8099
 # ---------------------------------------------------------------------------
 :8099 {
+	import security_headers
 	reverse_proxy syncthing:8384
 }
 

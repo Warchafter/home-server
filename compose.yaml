@@ -18,6 +18,7 @@ include:
   - path: stacks/caddy.yaml
   - path: stacks/adguard.yaml
   - path: stacks/uptime-kuma.yaml
+  - path: stacks/dockerproxy.yaml
   - path: stacks/homepage.yaml
   # --- Phase 2: Core Services ---
   - path: stacks/vaultwarden.yaml

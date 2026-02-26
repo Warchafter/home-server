@@ -1,5 +1,7 @@
-# Docker integration — lets Homepage detect container status
-# The socket is mounted read-only in the homepage container
+# Docker integration — lets Homepage detect container status.
+# Uses the Docker socket proxy (dockerproxy container) instead of the raw
+# socket for security — only read-only API endpoints are exposed.
 
 local:
-  socket: /var/run/docker.sock
+  host: dockerproxy
+  port: 2375

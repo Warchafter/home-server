@@ -4,8 +4,9 @@
 # A clean, fast dashboard that shows all your services at a glance.
 # Configuration lives in homepage/config/ (version-controlled YAML files).
 #
-# The Docker socket is mounted read-only so Homepage can auto-detect
-# container status (running/stopped) without being able to modify anything.
+# Homepage connects to the Docker socket proxy (dockerproxy container)
+# instead of the raw Docker socket — this limits API access to safe,
+# read-only endpoints (container list/inspect only).
 #
 # Access at: http://SERVER_IP (the default landing page via Caddy)
 # =============================================================================
@@ -34,11 +35,12 @@ services:
       - HOMEPAGE_VAR_QBITTORRENT_PASS=${QBITTORRENT_PASS:-}
       - HOMEPAGE_VAR_HOMEASSISTANT_API_KEY=${HOMEASSISTANT_API_KEY:-}
       - TZ=${TZ:-UTC}
+    depends_on:
+      dockerproxy:
+        condition: service_healthy
     volumes:
       # Dashboard config files (we version-control these in the repo)
       - ../homepage/config:/app/config
-      # Docker socket for container auto-discovery (read-only)
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - proxy
     healthcheck:

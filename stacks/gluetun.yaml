@@ -29,7 +29,7 @@
 
 services:
   gluetun:
-    image: qmcgaw/gluetun:v3
+    image: qmcgaw/gluetun:v3.41.1
     container_name: gluetun
     restart: unless-stopped
     cap_add:
@@ -60,7 +60,9 @@ services:
     networks:
       - proxy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- https://ipinfo.io || exit 1"]
+      # Use Gluetun's built-in control server instead of pinging an external
+      # service — avoids leaking VPN metadata to third parties every 30s.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9999 || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 30s
