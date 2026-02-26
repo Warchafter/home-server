@@ -1,8 +1,9 @@
 # =============================================================================
-# qBittorrent - Download Client
+# qBittorrent - Download Client (routed through Gluetun VPN)
 # =============================================================================
-# qBittorrent handles downloads for Sonarr and Radarr. It runs headless with
-# a web UI for management.
+# qBittorrent handles downloads for Sonarr and Radarr. All torrent traffic
+# is routed through Gluetun's VPN tunnel — your home IP is never exposed
+# to torrent peers.
 #
 # FIRST RUN:
 #   1. The default username is 'admin'
@@ -21,10 +22,10 @@
 #   - Category "movies" → save path: /media/downloads/complete/movies
 #   - Category "tv"     → save path: /media/downloads/complete/tv
 #
-# VPN (optional, not included):
-#   To route downloads through a VPN, add Gluetun and set:
-#     network_mode: "service:gluetun"
-#   See: https://github.com/qdm12/gluetun-wiki
+# NETWORKING:
+#   qBittorrent uses network_mode: "service:gluetun", which means it shares
+#   Gluetun's network stack entirely. It has NO network of its own — Caddy
+#   and Homepage reach it via "gluetun:8080" (Gluetun's container name).
 #
 # Access at: http://SERVER_IP:8097 (routed through Caddy)
 # =============================================================================
@@ -34,6 +35,13 @@ services:
     image: linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     restart: unless-stopped
+    # Route ALL network traffic through Gluetun's VPN tunnel.
+    # This replaces the 'networks' and 'ports' sections — qBittorrent
+    # shares Gluetun's network namespace and uses its IP.
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
     environment:
       - TZ=${TZ:-UTC}
       - PUID=${PUID:-1000}
@@ -44,13 +52,11 @@ services:
       - qbittorrent_config:/config
       # Media root — must match the same mount in Sonarr/Radarr for hardlinks
       - ${MEDIA_PATH:-/srv/media}:/media
-    networks:
-      - proxy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v2/app/version || exit 1"]
       interval: 30s
       timeout: 5s
-      start_period: 15s
+      start_period: 30s
       retries: 3
     deploy:
       resources:
@@ -60,7 +66,3 @@ services:
 volumes:
   qbittorrent_config:
     name: qbittorrent_config
-
-networks:
-  proxy:
-    external: true

@@ -75,11 +75,12 @@
 }
 
 # ---------------------------------------------------------------------------
-# qBittorrent — download client
+# qBittorrent — download client (via Gluetun VPN tunnel)
 # Access at: http://SERVER_IP:8097
+# Note: qBittorrent shares Gluetun's network, so we proxy to gluetun:8080
 # ---------------------------------------------------------------------------
 :8097 {
-	reverse_proxy qbittorrent:8080 {
+	reverse_proxy gluetun:8080 {
 		header_up Host {http.reverse_proxy.upstream.hostport}
 	}
 }

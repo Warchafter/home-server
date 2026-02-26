@@ -1,0 +1,75 @@
+# =============================================================================
+# Gluetun - VPN Client Container
+# =============================================================================
+# Gluetun creates a VPN tunnel that other containers route through.
+# Only qBittorrent uses this tunnel — all other services stay on the
+# local network unaffected.
+#
+# HOW IT WORKS:
+#   qBittorrent sets network_mode: "service:gluetun", which means it shares
+#   Gluetun's network stack. All qBittorrent traffic (including torrent
+#   downloads) goes through the VPN. Gluetun also handles port forwarding
+#   so peers can connect to you for better speeds.
+#
+# PROVIDER: ProtonVPN (Plus plan required for port forwarding)
+#
+# SETUP:
+#   1. Get your OpenVPN credentials from ProtonVPN dashboard:
+#      Account > OpenVPN / IKEv2 username
+#   2. Add to .env: PROTONVPN_USER and PROTONVPN_PASS
+#   3. docker compose up -d gluetun qbittorrent
+#
+# VERIFY VPN IS WORKING:
+#   docker exec gluetun wget -qO- https://ipinfo.io
+#   (should show VPN IP, not your home IP)
+#
+# =============================================================================
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun:v3
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TZ=${TZ:-UTC}
+      # --- ProtonVPN via OpenVPN ---
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${PROTONVPN_USER:?Set PROTONVPN_USER in .env}
+      - OPENVPN_PASSWORD=${PROTONVPN_PASS:?Set PROTONVPN_PASS in .env}
+      # Server selection — connect to a P2P-optimized server
+      - SERVER_COUNTRIES=${PROTONVPN_COUNTRY:-Netherlands}
+      # --- Port forwarding (requires ProtonVPN Plus) ---
+      # Gluetun automatically requests a forwarded port via NAT-PMP.
+      # The port is saved to /tmp/gluetun/forwarded_port for qBittorrent.
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+    # qBittorrent's web UI port — exposed here because qBittorrent shares
+    # Gluetun's network stack (network_mode: service:gluetun)
+    ports: []
+    volumes:
+      - gluetun_data:/gluetun
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- https://ipinfo.io || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+volumes:
+  gluetun_data:
+    name: gluetun_data
+
+networks:
+  proxy:
+    external: true

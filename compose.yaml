@@ -25,6 +25,7 @@ include:
   - path: stacks/sonarr.yaml
   - path: stacks/radarr.yaml
   - path: stacks/prowlarr.yaml
+  - path: stacks/gluetun.yaml
   - path: stacks/qbittorrent.yaml
   - path: stacks/homeassistant.yaml
   - path: stacks/syncthing.yaml
