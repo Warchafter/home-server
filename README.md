@@ -96,4 +96,4 @@ Then open `http://<SERVER_IP>` for the dashboard.
 
 - **Phase 1** (complete): Foundation — Caddy, AdGuard, Tailscale, Uptime Kuma, Homepage
 - **Phase 2** (current): Core services — Vaultwarden, Jellyfin, *arr stack, Home Assistant, Syncthing
-- **Phase 3**: Advanced — Forgejo, Prometheus/Grafana, Nextcloud, WireGuard
+- **Phase 3**: Advanced — Kavita, Calibre-Web, Prometheus/Grafana, Nextcloud, WireGuard

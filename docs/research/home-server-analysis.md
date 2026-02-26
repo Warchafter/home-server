@@ -209,32 +209,16 @@ Both are nearly equivalent in ad-blocking effectiveness. AdGuard Home's edge com
 
 ---
 
-### 2D. Dev Tools & Learning
-
-#### Git Server
-
-| Service | Notes |
-|---------|-------|
-| **Forgejo** | **Recommended.** Community-governed hard fork of Gitea (GPLv3+). More active development (232 contributors, 2,181 PRs in 2025 vs Gitea's 153 contributors, 1,256 commits). Built-in CI/CD via Forgejo Actions (GitHub Actions compatible syntax). Non-profit governance under Codeberg e.V. No copyright assignment required for contributions. |
-| **Gitea** | Still solid, but governed by a for-profit company (Gitea Ltd). MIT licensed. Slower development pace. Feature-equivalent to Forgejo for now, but diverging. |
-
-#### CI/CD
-
-| Service | Notes |
-|---------|-------|
-| **Forgejo Actions** (built-in) | **Recommended if using Forgejo.** Uses GitHub Actions-compatible workflow syntax (`.forgejo/workflows/`). Self-hosted runner connects outbound (no public IP needed). Learn one CI syntax that works on GitHub AND your home server. |
-| **Woodpecker CI** | Lightweight, community fork of Drone. Good standalone CI if you're not using Forgejo. YAML pipeline definitions. |
-| **GitHub Actions self-hosted runner** | Run GitHub Actions workflows on your own hardware. Good if your primary repos are on GitHub and you want local execution for builds/tests. |
+### 2D. Infrastructure & Learning
 
 #### Databases
 
-For development and learning, run these as Docker containers:
+Deploy these as Docker containers when needed by other services (primarily Nextcloud):
 
 | Database | Use Case |
 |----------|----------|
-| **PostgreSQL 17** | Primary relational database. Used by Nextcloud, Forgejo, Vaultwarden, and many other self-hosted apps. Learn one, use it everywhere. |
-| **Redis 7** | In-memory cache/queue. Required by Nextcloud, useful for caching in your own projects. |
-| **MariaDB 11** | MySQL-compatible. Some apps (e.g., certain WordPress setups) prefer it. Keep as a secondary option. |
+| **PostgreSQL 17** | Primary relational database. Used by Nextcloud, Vaultwarden, and many other self-hosted apps. Deploy alongside Nextcloud for better performance than its default SQLite. |
+| **Redis 7** | In-memory cache/queue. Required by Nextcloud for session management and file locking. |
 
 #### Monitoring & Observability
 
@@ -356,28 +340,27 @@ Add to stack:
 
 ### Phase 3: Advanced & Nice-to-Have (Month 2+)
 
-**Goal:** Developer tools, deeper monitoring, and polish.
+**Goal:** Deeper monitoring, reading library, cloud replacement, and polish.
 
 ```
 Add to stack:
-|-- Forgejo (self-hosted Git)
-|-- Forgejo Actions Runner (CI/CD)
-|-- PostgreSQL 17 (shared database)
-|-- Kavita or Calibre-Web (ebooks/comics)
-|-- Nextcloud (if you want full cloud suite)
+|-- Kavita (comics/manga reader)
+|-- Calibre-Web (ebook server)
 |-- Prometheus + Grafana + Node Exporter + cAdvisor
+|-- Nextcloud (full cloud suite — files, calendar, contacts, office docs)
+|-- PostgreSQL 17 (shared database for Nextcloud)
+|-- Redis 7 (cache for Nextcloud)
 |-- WireGuard (wg-easy) as a proper VPN gateway
 |-- Profilarr (auto-sync TRaSH profiles)
 ```
 
 **Phase 3 tasks:**
-1. Deploy Forgejo. Mirror your GitHub repos. Set up a self-hosted runner for CI/CD.
-2. Replace per-app SQLite databases with a shared PostgreSQL instance where supported.
-3. Deploy the full Prometheus + Grafana monitoring stack. Import community dashboards.
-4. Add Kavita for your comics/manga collection.
-5. (Optional) Set up Nextcloud if you want calendar/contacts sync or collaborative documents.
-6. (Optional) Deploy WireGuard via wg-easy for a traditional VPN gateway.
-7. (Optional) Consider migrating to Proxmox if you want VM isolation, or to k3s if you want Kubernetes experience.
+1. Add Kavita for your comics/manga collection (pairs with Syncthing — files already syncing from phone).
+2. Add Calibre-Web for ebooks/PDFs.
+3. Deploy the full Prometheus + Grafana monitoring stack. Import community dashboards for host and container metrics.
+4. (Optional) Set up Nextcloud if you want calendar/contacts sync, file sharing links, or collaborative documents. Deploy PostgreSQL and Redis as its backing services.
+5. (Optional) Deploy WireGuard via wg-easy for a traditional VPN gateway (Tailscale already covers remote access).
+6. (Optional) Consider migrating to Proxmox if you want VM isolation, or to k3s if you want Kubernetes experience.
 
 ---
 
@@ -490,18 +473,17 @@ These decisions ripple through your entire setup. Decide them before Phase 1.
 | **Smart Home** | Home Assistant | `ghcr.io/home-assistant/home-assistant:stable` | ~300MB |
 | **MQTT** | Mosquitto | `eclipse-mosquitto:2` | ~10MB |
 | **Zigbee** | Zigbee2MQTT | `koenkk/zigbee2mqtt:latest` | ~100MB |
-| **Git Server** | Forgejo | `codeberg.org/forgejo/forgejo:9` | ~200MB |
-| **CI Runner** | Forgejo Runner | `code.forgejo.org/forgejo/runner:latest` | ~100MB |
+| **Comics/Manga** | Kavita | `jvmilazz0/kavita:latest` | ~150MB |
+| **Ebooks** | Calibre-Web | `lscr.io/linuxserver/calibre-web:latest` | ~100MB |
 | **Database** | PostgreSQL | `postgres:17` | ~100-300MB |
 | **Cache** | Redis | `redis:7-alpine` | ~30MB |
-| **Books/Comics** | Kavita | `jvmilazz0/kavita:latest` | ~150MB |
 | **Metrics** | Prometheus | `prom/prometheus:latest` | ~200MB |
 | **Visualization** | Grafana | `grafana/grafana:latest` | ~200MB |
 | **Host Metrics** | Node Exporter | `prom/node-exporter:latest` | ~20MB |
 | **Container Metrics** | cAdvisor | `gcr.io/cadvisor/cadvisor:latest` | ~60MB |
 | **Backup** | Restic | CLI tool (not a container) | N/A |
 
-**Estimated total RAM for all services:** ~3.5-4.5 GB. An old HP desktop with 8GB RAM will handle Phases 1 and 2 comfortably. 16GB is recommended for the full stack including Phase 3.
+**Estimated total RAM for all services:** ~3.5-4.5 GB. An old HP desktop with 8GB RAM will handle Phases 1 and 2 comfortably. Phase 3 adds ~1-1.5 GB (more if running Nextcloud), so 8GB should still work but 16GB gives comfortable headroom.
 
 ---
 
@@ -532,9 +514,6 @@ These decisions ripple through your entire setup. Decide them before Phase 1.
 - [Homelab Reverse Proxy Showdown - HomeLab Starter](https://www.homelabstarter.com/homelab-reverse-proxy-comparison/)
 - [Nginx Proxy Manager vs Traefik vs Caddy - Docker Recipes](https://docker.recipes/docs/traefik-vs-nginx-vs-caddy)
 - [Nextcloud vs Syncthing - Best Self-Hosted Dropbox Alternatives - SSD Nodes](https://www.ssdnodes.com/blog/nextcloud-vs-seafile-dropbox-alternative/)
-- [Self-Hosted Git Platforms: GitLab vs Gitea vs Forgejo 2026 - DasRoot](https://dasroot.net/posts/2026/01/self-hosted-git-platforms-gitlab-gitea-forgejo-2026/)
-- [Forgejo Comparison with Gitea](https://forgejo.org/compare-to-gitea/)
-- [Forgejo Actions Runner with Docker Compose - Linus Groh](https://linus.dev/posts/setting-up-a-self-hosted-forgejo-actions-runner-with-docker-compose/)
 - [Kavita vs Calibre-Web: Which Should You Self-Host - selfhosting.sh](https://selfhosting.sh/compare/kavita-vs-calibre-web/)
 - [Self-Hosted Password Manager: Vaultwarden Setup Guide 2026 - DasRoot](https://dasroot.net/posts/2026/01/self-hosted-password-manager-vaultwarden-setup/)
 - [Uptime Kuma - Official Site](https://uptimekuma.org/)
