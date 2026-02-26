@@ -21,6 +21,10 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     environment:
       # Read-only access to containers and images (needed by Homepage)
       - CONTAINERS=1

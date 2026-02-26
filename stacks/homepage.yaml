@@ -20,6 +20,10 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     environment:
       # Which hostnames/IPs are allowed to access the dashboard.
       # Without this, Homepage rejects requests as a security measure.
