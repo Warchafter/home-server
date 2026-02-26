@@ -59,8 +59,9 @@ services:
       # The port is saved to /tmp/gluetun/forwarded_port for qBittorrent.
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
-      # Allow qBittorrent's web UI through Gluetun's firewall
-      - FIREWALL_INPUT_PORTS=8080
+      # Allow qBittorrent's web UI and Gluetun's control server through the firewall
+      # 8080 = qBittorrent web UI, 9999 = Gluetun control server (for healthcheck + monitoring)
+      - FIREWALL_INPUT_PORTS=8080,9999
     # qBittorrent's web UI port — exposed here because qBittorrent shares
     # Gluetun's network stack (network_mode: service:gluetun)
     ports: []
