@@ -41,6 +41,8 @@ services:
       - CHOWN
       - DAC_OVERRIDE
       - FOWNER
+      - SETUID
+      - SETGID
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
