@@ -42,6 +42,9 @@ services:
       - HOMEPAGE_VAR_QBITTORRENT_USER=${QBITTORRENT_USER:-admin}
       - HOMEPAGE_VAR_QBITTORRENT_PASS=${QBITTORRENT_PASS:-}
       - HOMEPAGE_VAR_HOMEASSISTANT_API_KEY=${HOMEASSISTANT_API_KEY:-}
+      # Phase 3 widget credentials
+      - HOMEPAGE_VAR_KAVITA_USER=${KAVITA_USER:-}
+      - HOMEPAGE_VAR_KAVITA_PASS=${KAVITA_PASS:-}
       - TZ=${TZ:-UTC}
     depends_on:
       dockerproxy:

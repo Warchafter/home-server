@@ -1,0 +1,51 @@
+# =============================================================================
+# Node Exporter - Host Metrics
+# =============================================================================
+# Exports hardware and OS metrics (CPU, memory, disk, network, filesystem)
+# from the host machine. Prometheus scrapes these at :9100/metrics.
+#
+# SECURITY NOTES:
+# - Mounts host /proc, /sys, and / as READ-ONLY for metric collection
+# - pid: host is required for accurate process-level metrics
+# - No special capabilities needed (all mounts are :ro)
+# - Not user-facing — data is consumed by Prometheus → Grafana
+#
+# GRAFANA DASHBOARD: Import "Node Exporter Full" (ID 1860)
+# =============================================================================
+
+services:
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node-exporter
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pid: host
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9100/metrics || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 64m
+
+networks:
+  proxy:
+    external: true

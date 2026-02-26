@@ -31,6 +31,14 @@ include:
   - path: stacks/qbittorrent.yaml
   - path: stacks/homeassistant.yaml
   - path: stacks/syncthing.yaml
+  # --- Phase 3: Advanced ---
+  - path: stacks/prometheus.yaml
+  - path: stacks/grafana.yaml
+  - path: stacks/node-exporter.yaml
+  - path: stacks/cadvisor.yaml
+  - path: stacks/kavita.yaml
+  - path: stacks/calibre-web.yaml
+  - path: stacks/profilarr.yaml
 
 # =============================================================================
 # Shared Networks

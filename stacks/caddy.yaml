@@ -34,6 +34,11 @@ services:
       - "${SERVER_IP:?Set SERVER_IP in .env}:8097:8097"       # qBittorrent (download client)
       - "${SERVER_IP:?Set SERVER_IP in .env}:8098:8098"       # Home Assistant (smart home)
       - "${SERVER_IP:?Set SERVER_IP in .env}:8099:8099"       # Syncthing (file sync)
+      # --- Phase 3 ---
+      - "${SERVER_IP:?Set SERVER_IP in .env}:8100:8100"       # Grafana (metrics dashboards)
+      - "${SERVER_IP:?Set SERVER_IP in .env}:8101:8101"       # Kavita (comics/manga reader)
+      - "${SERVER_IP:?Set SERVER_IP in .env}:8102:8102"       # Calibre-Web (ebook server)
+      - "${SERVER_IP:?Set SERVER_IP in .env}:8103:8103"       # Profilarr (arr profile sync)
       # - "${SERVER_IP:?Set SERVER_IP in .env}:443:443"       # HTTPS — uncomment when you add a domain
     volumes:
       # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/

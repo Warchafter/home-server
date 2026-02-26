@@ -1,0 +1,52 @@
+# =============================================================================
+# Prometheus - Metrics Collection
+# =============================================================================
+# Prometheus scrapes metrics from Node Exporter (host metrics) and cAdvisor
+# (container metrics), storing them in a time-series database. Grafana queries
+# Prometheus to render dashboards.
+#
+# Not directly user-facing — access metrics through Grafana at :8100.
+#
+# DATA RETENTION: 30 days by default. Adjust --storage.tsdb.retention.time
+# if you need more history (increases disk usage).
+#
+# SCRAPE CONFIG: See prometheus/prometheus.yml for targets and intervals.
+# =============================================================================
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.5
+    container_name: prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512m
+
+volumes:
+  prometheus_data:
+    name: prometheus_data
+
+networks:
+  proxy:
+    external: true

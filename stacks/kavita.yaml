@@ -1,0 +1,55 @@
+# =============================================================================
+# Kavita - Comics/Manga/Book Reader
+# =============================================================================
+# Kavita is a self-hosted digital library for reading comics, manga, and books.
+# It provides a web-based reader with OPDS support for mobile apps.
+#
+# FIRST RUN:
+#   1. Open http://SERVER_IP:8101
+#   2. Create an admin account
+#   3. Add libraries: Settings > Libraries > Add Library
+#      - Comics/Manga: path /comics
+#      - Books:        path /books
+#   4. Generate an API key: Settings > Account > API Key
+#      Add it to .env as KAVITA_API_KEY for the Homepage widget
+#
+# CONTENT: Place files in /srv/media/books and /srv/media/comics on the host.
+# Syncthing can sync content from other devices into these directories.
+#
+# Access at: http://SERVER_IP:8101 (routed through Caddy)
+# =============================================================================
+
+services:
+  kavita:
+    image: jvmilazz0/kavita:0.8.4
+    container_name: kavita
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - kavita_config:/kavita/config
+      - ${MEDIA_PATH:-/srv/media}/books:/books:ro
+      - ${MEDIA_PATH:-/srv/media}/comics:/comics:ro
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512m
+
+volumes:
+  kavita_config:
+    name: kavita_config
+
+networks:
+  proxy:
+    external: true

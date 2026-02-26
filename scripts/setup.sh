@@ -397,9 +397,17 @@ create_media_dirs() {
     if [ -d "$media_path/movies" ] && [ -d "$media_path/tv" ]; then
         ok "Media directories already exist."
     else
-        sudo mkdir -p "$media_path"/{movies,tv,downloads/{complete/{movies,tv},incomplete}}
+        sudo mkdir -p "$media_path"/{movies,tv,downloads/{complete/{movies,tv},incomplete},books,comics}
         sudo chown -R "$(id -u):$(id -g)" "$media_path"
         ok "Media directories created."
+    fi
+
+    # Phase 3: books and comics directories
+    if [ ! -d "$media_path/books" ] || [ ! -d "$media_path/comics" ]; then
+        info "Creating reading library directories..."
+        sudo mkdir -p "$media_path"/{books,comics}
+        sudo chown -R "$(id -u):$(id -g)" "$media_path/books" "$media_path/comics"
+        ok "Reading library directories created."
     fi
 
     info "Creating Syncthing data directory at $sync_path..."

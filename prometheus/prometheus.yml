@@ -1,0 +1,29 @@
+# =============================================================================
+# Prometheus Scrape Configuration
+# =============================================================================
+# Prometheus periodically scrapes these endpoints to collect metrics.
+# All targets use Docker DNS names (container names on the proxy network).
+#
+# Adjust scrape_interval if you want more/less granular data.
+# Lower intervals = more disk usage, higher resolution.
+# =============================================================================
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  # Prometheus's own metrics
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Host-level metrics (CPU, RAM, disk, network)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Per-container metrics (CPU, memory, network per container)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

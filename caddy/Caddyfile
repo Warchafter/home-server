@@ -126,6 +126,42 @@
 	reverse_proxy syncthing:8384
 }
 
+# ---------------------------------------------------------------------------
+# Grafana — metrics dashboards
+# Access at: http://SERVER_IP:8100
+# ---------------------------------------------------------------------------
+:8100 {
+	import security_headers
+	reverse_proxy grafana:3000
+}
+
+# ---------------------------------------------------------------------------
+# Kavita — comics/manga/book reader
+# Access at: http://SERVER_IP:8101
+# ---------------------------------------------------------------------------
+:8101 {
+	import security_headers
+	reverse_proxy kavita:5000
+}
+
+# ---------------------------------------------------------------------------
+# Calibre-Web — ebook server
+# Access at: http://SERVER_IP:8102
+# ---------------------------------------------------------------------------
+:8102 {
+	import security_headers
+	reverse_proxy calibre-web:8083
+}
+
+# ---------------------------------------------------------------------------
+# Profilarr — Sonarr/Radarr profile automation
+# Access at: http://SERVER_IP:8103
+# ---------------------------------------------------------------------------
+:8103 {
+	import security_headers
+	reverse_proxy profilarr:6868
+}
+
 # =============================================================================
 # DOMAIN MODE (uncomment when you have a domain)
 # See docs/adding-a-domain.md for step-by-step instructions.
@@ -185,4 +221,20 @@
 #
 # sync.home.{env.DOMAIN} {
 #     reverse_proxy syncthing:8384
+# }
+#
+# grafana.home.{env.DOMAIN} {
+#     reverse_proxy grafana:3000
+# }
+#
+# kavita.home.{env.DOMAIN} {
+#     reverse_proxy kavita:5000
+# }
+#
+# books.home.{env.DOMAIN} {
+#     reverse_proxy calibre-web:8083
+# }
+#
+# profilarr.home.{env.DOMAIN} {
+#     reverse_proxy profilarr:6868
 # }

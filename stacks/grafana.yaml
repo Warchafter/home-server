@@ -1,0 +1,54 @@
+# =============================================================================
+# Grafana - Metrics Dashboards
+# =============================================================================
+# Grafana provides dashboards for visualizing metrics from Prometheus.
+# The Prometheus data source is auto-configured via provisioning files.
+#
+# FIRST RUN:
+#   1. Open http://SERVER_IP:8100
+#   2. Log in with admin / GRAFANA_ADMIN_PASS (from .env)
+#   3. Import community dashboards:
+#      - Node Exporter Full: Dashboard ID 1860
+#      - Docker/cAdvisor:    Dashboard ID 14282
+#      Go to Dashboards > New > Import > paste the ID > select Prometheus
+#
+# Access at: http://SERVER_IP:8100 (routed through Caddy)
+# =============================================================================
+
+services:
+  grafana:
+    image: grafana/grafana:12.4.0
+    container_name: grafana
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://${SERVER_IP:-localhost}:8100
+    volumes:
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256m
+
+volumes:
+  grafana_data:
+    name: grafana_data
+
+networks:
+  proxy:
+    external: true

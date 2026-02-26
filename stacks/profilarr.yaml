@@ -1,0 +1,51 @@
+# =============================================================================
+# Profilarr - Sonarr/Radarr Profile Automation
+# =============================================================================
+# Profilarr syncs TRaSH Guides quality profiles and custom formats into your
+# Sonarr and Radarr instances. TRaSH Guides are community-maintained,
+# well-tested profiles that optimize media quality settings.
+#
+# FIRST RUN:
+#   1. Open http://SERVER_IP:8103
+#   2. Connect Sonarr: add URL http://sonarr:8989 + API key from .env
+#   3. Connect Radarr: add URL http://radarr:7878 + API key from .env
+#   4. Import profiles and custom formats from TRaSH Guides
+#   5. Profilarr keeps them in sync automatically
+#
+# Access at: http://SERVER_IP:8103 (routed through Caddy)
+# =============================================================================
+
+services:
+  profilarr:
+    image: santiagosayshey/profilarr:v1.0.0
+    container_name: profilarr
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - TZ=${TZ:-UTC}
+    volumes:
+      - profilarr_config:/config
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:6868 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 128m
+
+volumes:
+  profilarr_config:
+    name: profilarr_config
+
+networks:
+  proxy:
+    external: true

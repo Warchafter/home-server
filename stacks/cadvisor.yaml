@@ -1,0 +1,50 @@
+# =============================================================================
+# cAdvisor - Container Metrics
+# =============================================================================
+# Exports per-container resource usage metrics (CPU, memory, network, I/O).
+# Prometheus scrapes these at :8080/metrics.
+#
+# SECURITY NOTES:
+# - Requires SYS_ADMIN capability for cgroup access (cannot avoid this)
+# - All host mounts are READ-ONLY except /var/run (needed for Docker socket)
+# - Not user-facing — data is consumed by Prometheus → Grafana
+#
+# CGROUP V2: This version (v0.51.0) has full cgroup v2 support for
+# Ubuntu 22.04+ which uses cgroup v2 by default.
+#
+# GRAFANA DASHBOARD: Import "Docker Container & Host Metrics" (ID 14282)
+# =============================================================================
+
+services:
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    container_name: cadvisor
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128m
+
+networks:
+  proxy:
+    external: true

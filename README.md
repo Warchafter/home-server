@@ -7,8 +7,8 @@ Config-as-code for a personal home server running Docker Compose on an HP SFF de
 ```
 HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 ├── Tailscale (host-level VPN — not a container)
-├── Docker Engine + Compose v2 (15 containers)
-│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8099)
+├── Docker Engine + Compose v2 (22 containers)
+│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8103)
 │   ├── Docker Proxy     ─ secure Docker socket proxy for Homepage
 │   ├── AdGuard Home     ─ DNS + ad blocking (port 53)
 │   ├── Uptime Kuma      ─ uptime monitoring (via Caddy :8090)
@@ -22,7 +22,14 @@ HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 │   ├── Gluetun          ─ VPN tunnel (ProtonVPN, for qBittorrent)
 │   ├── qBittorrent      ─ download client (via Caddy :8097, VPN-routed)
 │   ├── Home Assistant   ─ smart home automation (via Caddy :8098)
-│   └── Syncthing        ─ file sync (via Caddy :8099)
+│   ├── Syncthing        ─ file sync (via Caddy :8099)
+│   ├── Grafana          ─ metrics dashboards (via Caddy :8100)
+│   ├── Prometheus       ─ metrics collection (internal)
+│   ├── Node Exporter    ─ host metrics (internal)
+│   ├── cAdvisor         ─ container metrics (internal)
+│   ├── Kavita           ─ comics/manga reader (via Caddy :8101)
+│   ├── Calibre-Web      ─ ebook server (via Caddy :8102)
+│   └── Profilarr        ─ TRaSH profile sync (via Caddy :8103)
 ```
 
 ## Quick Start
@@ -67,6 +74,10 @@ Then open `http://<SERVER_IP>` for the dashboard.
 | qBittorrent | `http://SERVER_IP:8097` | Download client (VPN-routed via Gluetun) |
 | Home Assistant | `http://SERVER_IP:8098` | Smart home automation |
 | Syncthing | `http://SERVER_IP:8099` | File sync across devices |
+| Grafana | `http://SERVER_IP:8100` | Metrics dashboards (Prometheus + Grafana) |
+| Kavita | `http://SERVER_IP:8101` | Comics, manga & book reader |
+| Calibre-Web | `http://SERVER_IP:8102` | Ebook library server |
+| Profilarr | `http://SERVER_IP:8103` | TRaSH profile sync for Sonarr/Radarr |
 | Tailscale | Host-level | Secure remote access from anywhere via VPN |
 
 ## Project Structure
@@ -89,9 +100,19 @@ Then open `http://<SERVER_IP>` for the dashboard.
 │   ├── gluetun.yaml
 │   ├── qbittorrent.yaml
 │   ├── homeassistant.yaml
-│   └── syncthing.yaml
+│   ├── syncthing.yaml
+│   ├── prometheus.yaml        # Phase 3
+│   ├── grafana.yaml
+│   ├── node-exporter.yaml
+│   ├── cadvisor.yaml
+│   ├── kavita.yaml
+│   ├── calibre-web.yaml
+│   └── profilarr.yaml
 ├── caddy/
 │   └── Caddyfile              # Reverse proxy rules
+├── prometheus/
+│   └── prometheus.yml         # Scrape targets configuration
+├── grafana/provisioning/      # Auto-configured data sources
 ├── homepage/config/           # Dashboard configuration
 ├── scripts/
 │   └── setup.sh               # Bootstrap script for fresh server
@@ -102,4 +123,5 @@ Then open `http://<SERVER_IP>` for the dashboard.
 
 - **Phase 1** (complete): Foundation — Caddy, AdGuard, Tailscale, Uptime Kuma, Homepage
 - **Phase 2** (complete): Core services — Vaultwarden, Jellyfin, *arr stack, Home Assistant, Syncthing
-- **Phase 3**: Advanced — Kavita, Calibre-Web, Prometheus/Grafana, Nextcloud, WireGuard
+- **Phase 3** (complete): Monitoring & reading — Prometheus/Grafana, Kavita, Calibre-Web, Profilarr
+- **Phase 4**: Cloud & networking — Nextcloud, WireGuard
