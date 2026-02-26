@@ -39,6 +39,12 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
     # Route ALL network traffic through Gluetun's VPN tunnel.
     # This replaces the 'networks' and 'ports' sections — qBittorrent
     # shares Gluetun's network namespace and uses its IP.

@@ -38,6 +38,7 @@ services:
       - ALL
     cap_add:
       - NET_ADMIN
+      - CHOWN
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
