@@ -82,6 +82,15 @@
           url: http://prowlarr:9696
           key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
 
+    - Gluetun:
+        icon: gluetun.png
+        description: VPN tunnel (ProtonVPN)
+        server: local
+        container: gluetun
+        widget:
+          type: gluetun
+          url: http://gluetun:8000
+
     - qBittorrent:
         icon: qbittorrent.png
         href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8097"
