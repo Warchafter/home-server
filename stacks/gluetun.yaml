@@ -73,7 +73,7 @@ services:
     healthcheck:
       # Use Gluetun's built-in control server instead of pinging an external
       # service — avoids leaking VPN metadata to third parties every 30s.
-      test: ["CMD-SHELL", "wget -qO- http://localhost:9999 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/v1/publicip/ip || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 30s
