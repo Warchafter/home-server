@@ -32,7 +32,7 @@ services:
       # Disable per-container disk metrics — the overlayfs layer traversal
       # takes 1-2 min per container on Docker 29, blocking /metrics and causing
       # Prometheus scrape timeouts. Host disk is covered by Node Exporter.
-      - --disable_metrics=disk,diskIO,hugetlb
+      - --disable_metrics=disk,diskIO,hugetlb,referenced_memory
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -50,7 +50,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: 128m
+          memory: 256m
 
 networks:
   proxy:
