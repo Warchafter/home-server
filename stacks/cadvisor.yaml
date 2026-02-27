@@ -28,6 +28,11 @@ services:
     cap_add:
       - SYS_ADMIN
       - DAC_READ_SEARCH
+    command:
+      # Disable per-container disk metrics — the overlayfs layer traversal
+      # takes 1-2 min per container on Docker 29, blocking /metrics and causing
+      # Prometheus scrape timeouts. Host disk is covered by Node Exporter.
+      - --disable_metrics=disk,diskIO,hugetlb
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -44,8 +49,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 256m
+          cpus: "0.25"
+          memory: 128m
 
 networks:
   proxy:
