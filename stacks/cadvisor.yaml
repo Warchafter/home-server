@@ -26,6 +26,7 @@ services:
       - ALL
     cap_add:
       - SYS_ADMIN
+      - DAC_READ_SEARCH
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
