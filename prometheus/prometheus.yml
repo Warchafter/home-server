@@ -24,6 +24,9 @@ scrape_configs:
       - targets: ['node-exporter:9100']
 
   # Per-container metrics (CPU, memory, network per container)
+  # Longer timeout: cAdvisor's disk usage scan can block the /metrics endpoint
+  # for 30-60s on first scrape after restart (overlayfs layer traversal).
   - job_name: 'cadvisor'
+    scrape_timeout: 60s
     static_configs:
       - targets: ['cadvisor:8080']

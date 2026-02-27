@@ -44,8 +44,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: 128m
+          cpus: "0.50"
+          memory: 256m
 
 networks:
   proxy:
