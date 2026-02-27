@@ -33,6 +33,11 @@ services:
       # takes 1-2 min per container on Docker 29, blocking /metrics and causing
       # Prometheus scrape timeouts. Host disk is covered by Node Exporter.
       - --disable_metrics=disk,diskIO,hugetlb,referenced_memory
+      # Only monitor Docker containers (skip system-level cgroups)
+      - --docker_only=true
+      # Collect stats every 10s instead of default 1s — Prometheus scrapes
+      # every 30s, so 1s resolution is wasteful and burns CPU.
+      - --housekeeping_interval=10s
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -49,7 +54,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.50"
           memory: 256m
 
 networks:
