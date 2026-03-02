@@ -65,8 +65,11 @@
 # app renders the web UI inside an iframe, which SAMEORIGIN blocks (error -27).
 # ---------------------------------------------------------------------------
 :8093 {
-	import security_headers
-	header -X-Frame-Options
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
 	reverse_proxy jellyfin:8096
 }
 
