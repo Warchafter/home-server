@@ -16,26 +16,22 @@ background:
 
 layout:
   Infrastructure:
-    style: row
-    columns: 3
+    style: column
 
   Security:
-    style: column    # compact list — Vaultwarden alone doesn't need a full card row
+    style: column
 
   Media:
-    style: row
-    columns: 3
+    style: column
 
   Downloads:
-    style: row
-    columns: 3
+    style: column
 
   Smart Home:
-    style: column    # compact — single card
+    style: column
 
   Sync:
-    style: column    # compact — single card
+    style: column
 
   Observability:
-    style: row
-    columns: 5      # fit all 5 monitoring services in one dense row
+    style: column
