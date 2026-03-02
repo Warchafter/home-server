@@ -24,12 +24,12 @@ html, body {
   background-attachment: fixed;
 }
 
-/* Dark overlay — crushes bright spots in the background image */
+/* Dark overlay — takes the edge off bright highlights in the background image */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 20, 0.55);
+  background: rgba(5, 7, 20, 0.25);
   pointer-events: none;
   z-index: 0;
 }
