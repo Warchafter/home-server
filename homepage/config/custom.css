@@ -94,6 +94,24 @@ ul.services-list {
   border-left:   2px solid rgba(99, 102, 241, 0.4)   !important;
 }
 
+/* ── Inner widget stat cells ─────────────────────────────
+   Each stat cell (QUERIES, BLOCKED, etc.) is a flex-col div
+   inside the card. Reduce padding and font size to compact them.
+   ─────────────────────────────────────────────────────── */
+.service-card .flex.flex-col.items-center {
+  padding: 0.1rem 0.15rem !important;
+}
+
+.service-card .text-sm {
+  font-size: 0.72rem !important;
+  line-height: 1.2 !important;
+}
+
+.service-card .text-xs {
+  font-size: 0.6rem !important;
+  line-height: 1.2 !important;
+}
+
 /* Card hover — lift + stronger glow + brighter accent */
 li.service {
   transition: transform 0.18s ease, box-shadow 0.18s ease;
