@@ -3,6 +3,10 @@
 
 title: Home Server
 
+theme: dark
+color: slate
+headerStyle: clean
+
 layout:
   Infrastructure:
     style: row
