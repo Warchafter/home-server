@@ -61,9 +61,12 @@
 # ---------------------------------------------------------------------------
 # Jellyfin — media server
 # Access at: http://SERVER_IP:8093
+# Note: X-Frame-Options is intentionally omitted here. The LG webOS Jellyfin
+# app renders the web UI inside an iframe, which SAMEORIGIN blocks (error -27).
 # ---------------------------------------------------------------------------
 :8093 {
 	import security_headers
+	header -X-Frame-Options
 	reverse_proxy jellyfin:8096
 }
 

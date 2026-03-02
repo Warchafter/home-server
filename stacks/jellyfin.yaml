@@ -44,8 +44,9 @@ services:
       - ALL
     environment:
       - TZ=${TZ:-UTC}
-      # Tells clients the server's address for direct connections
-      - JELLYFIN_PublishedServerUrl=${SERVER_IP:-localhost}
+      # Tells clients the server's address for direct connections — must be the
+      # full URL (scheme + host + port) that clients on your LAN can reach.
+      - JELLYFIN_PublishedServerUrl=http://${SERVER_IP:-localhost}:8093
     volumes:
       # Server config, metadata cache, database
       - jellyfin_config:/config
