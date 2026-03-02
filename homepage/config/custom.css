@@ -34,11 +34,19 @@ body::after {
   z-index: 0;
 }
 
-/* Section headers — indigo left border accent */
-#layout-groups h2,
-.services-group h2 {
-  border-left: 3px solid rgba(99, 102, 241, 0.7);
-  padding-left: 0.6rem;
+/* Section headers — indigo accent anchored on the disclosure button itself */
+.services-group > button {
+  border-left: 3px solid rgba(99, 102, 241, 0.65) !important;
+  padding-left: 0.6rem !important;
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15) !important;
+  background: rgba(5, 8, 20, 0.35) !important;
+  width: 100% !important;
+}
+
+/* h2 inside button — text styling only */
+.services-group > button h2 {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.7rem;
@@ -69,12 +77,6 @@ ul.services-list {
   padding: 0 !important;
 }
 
-/* Section disclosure button — minimal vertical padding */
-.services-group > button {
-  padding-top: 0.2rem !important;
-  padding-bottom: 0.2rem !important;
-}
-
 /* Outer layout container */
 #layout-groups {
   margin: 0.25rem 0.5rem !important;
@@ -91,7 +93,7 @@ ul.services-list {
   border-top:    1px solid rgba(255, 255, 255, 0.06) !important;
   border-right:  1px solid rgba(255, 255, 255, 0.06) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  border-left:   2px solid rgba(99, 102, 241, 0.4)   !important;
+  border-left:   2px solid rgba(99, 102, 241, 0.6)   !important;
 }
 
 /* ── Inner widget stat cells ─────────────────────────────
@@ -124,4 +126,18 @@ li.service:hover {
 li.service:hover .service-card {
   box-shadow: 0 8px 28px rgba(99, 102, 241, 0.22) !important;
   border-left-color: rgba(99, 102, 241, 0.7) !important;
+}
+
+/* ── Bookmarks ───────────────────────────────────────────
+   Card background treatment for Documentation / Project groups.
+   ─────────────────────────────────────────────────────── */
+.bookmarks-group {
+  background-color: rgba(10, 15, 35, 0.92) !important;
+  border-top:    1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right:  1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-left:   2px solid rgba(99, 102, 241, 0.6)   !important;
+  border-radius: 0.375rem !important;
+  padding: 0.4rem 0.5rem !important;
+  margin-bottom: 0.125rem !important;
 }
