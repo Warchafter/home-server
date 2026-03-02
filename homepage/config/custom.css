@@ -45,7 +45,8 @@ body::after {
 
 /* Card backgrounds — Homepage dark theme defaults to ~5% opacity which is
    nearly invisible over a background image. Force a solid dark background. */
-#widgets-wrap li > div:first-child {
+#widgets-wrap li,
+#widgets-wrap li > div {
   background: rgba(10, 15, 35, 0.88) !important;
 }
 
