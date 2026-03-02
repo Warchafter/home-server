@@ -124,4 +124,12 @@ Then open `http://<SERVER_IP>` for the dashboard.
 - **Phase 1** (complete): Foundation — Caddy, AdGuard, Tailscale, Uptime Kuma, Homepage
 - **Phase 2** (complete): Core services — Vaultwarden, Jellyfin, *arr stack, Home Assistant, Syncthing
 - **Phase 3** (complete): Monitoring & reading — Prometheus/Grafana, Kavita, Calibre-Web, Profilarr
-- **Phase 4**: Cloud & networking — Nextcloud, WireGuard
+- **Phase 4**: External independence + cloud
+  - **Nextcloud** — self-hosted cloud storage (replace Google Drive / iCloud)
+  - **WireGuard** — traditional VPN gateway for non-Tailscale clients
+  - **Headscale** — self-hosted Tailscale control server (eliminate tailscale.com dependency)
+  - **Unbound** — recursive DNS resolver (eliminate upstream DNS dependency on 1.1.1.1/8.8.8.8)
+  - **SearXNG** — self-hosted meta-search engine (replace Google search widget)
+  - **Syncthing discosrv + relaysrv** — self-hosted discovery/relay (eliminate syncthing.net dependency)
+  - **Gitea/Forgejo** — self-hosted git for TRaSH Guides mirror (eliminate Profilarr's GitHub dependency)
+  - **Local registry cache** — pull-through cache for Docker Hub/ghcr.io (eliminate registry dependency on fresh deploys)
