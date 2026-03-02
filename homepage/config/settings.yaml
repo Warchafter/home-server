@@ -6,7 +6,6 @@ title: Home Server
 theme: dark
 color: indigo
 headerStyle: clean
-cardBlur: md
 useEqualHeights: true
 
 background:
