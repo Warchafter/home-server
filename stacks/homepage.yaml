@@ -52,6 +52,8 @@ services:
     volumes:
       # Dashboard config files (we version-control these in the repo)
       - ../homepage/config:/app/config
+      # Read-only media mount so the resources widget can report disk usage
+      - /srv/media:/media:ro
     networks:
       - proxy
     healthcheck:

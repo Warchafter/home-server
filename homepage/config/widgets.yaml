@@ -1,10 +1,22 @@
 # Top-bar widgets (above service cards)
 # Docs: https://gethomepage.dev/configs/widgets/
 
+- resources:
+    label: System
+    cpu: true
+    memory: true
+    disk: /
+    refresh: 5000
+
+- resources:
+    label: Media
+    disk: /media
+    refresh: 30000
+
 - datetime:
-    text_size: 2xl
+    text_size: xl
     format:
-      dateStyle: full
+      dateStyle: long
       timeStyle: short
       hour12: true
 
