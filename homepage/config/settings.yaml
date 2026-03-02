@@ -10,9 +10,8 @@ useEqualHeights: true
 
 background:
   image: https://w.wallhaven.cc/full/28/wallhaven-285v3m.jpg
-  blur: sm
-  brightness: 30  # enough to see mood/color without blinding highlights
-  saturate: 60    # desaturated so neon blobs don't compete
+  brightness: 60  # NieR wallpaper is already dark — let 2B show through
+  saturate: 100   # monochrome image, no need to desaturate
   opacity: 90
 
 layout:

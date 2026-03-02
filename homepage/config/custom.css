@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════
-   Deep Space Theme
+   YoRHa Theme
+   Matches the 2B/NieR: Automata minimalist wallpaper.
+   Near-black backgrounds, warm silver accents.
    ═══════════════════════════════════════════════════════ */
 
-/* Background: deep dark gradient — navy → midnight blue */
+/* Background: near-black — no blue tint */
 html, body {
   background: linear-gradient(
     160deg,
-    #060810 0%,
-    #0b1020 35%,
-    #0d1530 65%,
-    #080c1a 100%
+    #050505 0%,
+    #0a0a0a 35%,
+    #0e0e0e 65%,
+    #060606 100%
   ) !important;
   min-height: 100vh;
 }
@@ -17,31 +19,31 @@ html, body {
 /* Subtle dot-grid texture over the background */
 #page_container {
   background-image: radial-gradient(
-    rgba(148, 163, 184, 0.06) 1px,
+    rgba(255, 255, 255, 0.04) 1px,
     transparent 1px
   );
   background-size: 28px 28px;
   background-attachment: fixed;
 }
 
-/* Dark overlay — takes the edge off bright highlights in the background image */
+/* Minimal dark overlay — image is already very dark */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 20, 0.25);
+  background: rgba(5, 5, 5, 0.12);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Section headers — indigo accent anchored on the disclosure button itself */
+/* Section headers — silver left accent on the disclosure button itself */
 .services-group > button {
-  border-left: 3px solid rgba(99, 102, 241, 0.65) !important;
+  border-left: 3px solid rgba(215, 210, 205, 0.65) !important;
   padding-left: 0.6rem !important;
   padding-top: 0.2rem !important;
   padding-bottom: 0.2rem !important;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.15) !important;
-  background: rgba(5, 8, 20, 0.35) !important;
+  border-bottom: 1px solid rgba(215, 210, 205, 0.12) !important;
+  background: rgba(10, 8, 6, 0.5) !important;
   width: 100% !important;
 }
 
@@ -83,17 +85,14 @@ ul.services-list {
 }
 
 /* ── Service cards ───────────────────────────────────────
-   .service-card is the actual card div confirmed via DevTools.
-   - Solid dark navy background
-   - Hairline border on 3 sides for definition
-   - Indigo left accent bar (2px) for visual rhythm
+   Near-black background, hairline borders, silver left bar.
    ─────────────────────────────────────────────────────── */
 .service-card {
-  background-color: rgba(10, 15, 35, 0.92) !important;
-  border-top:    1px solid rgba(255, 255, 255, 0.06) !important;
-  border-right:  1px solid rgba(255, 255, 255, 0.06) !important;
+  background-color: rgba(10, 8, 6, 0.92) !important;
+  border-top:    1px solid rgba(255, 255, 255, 0.07) !important;
+  border-right:  1px solid rgba(255, 255, 255, 0.07) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  border-left:   2px solid rgba(99, 102, 241, 0.6)   !important;
+  border-left:   2px solid rgba(215, 210, 205, 0.55) !important;
 }
 
 /* ── Inner widget stat cells ─────────────────────────────
@@ -114,7 +113,7 @@ ul.services-list {
   line-height: 1.2 !important;
 }
 
-/* Card hover — lift + stronger glow + brighter accent */
+/* Card hover — lift + silver glow + brighter accent */
 li.service {
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
@@ -124,19 +123,19 @@ li.service:hover {
 }
 
 li.service:hover .service-card {
-  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.22) !important;
-  border-left-color: rgba(99, 102, 241, 0.7) !important;
+  box-shadow: 0 8px 28px rgba(215, 210, 205, 0.14) !important;
+  border-left-color: rgba(215, 210, 205, 0.9) !important;
 }
 
 /* ── Bookmarks ───────────────────────────────────────────
    Card background treatment for Documentation / Project groups.
    ─────────────────────────────────────────────────────── */
 .bookmarks-group {
-  background-color: rgba(10, 15, 35, 0.92) !important;
-  border-top:    1px solid rgba(255, 255, 255, 0.06) !important;
-  border-right:  1px solid rgba(255, 255, 255, 0.06) !important;
+  background-color: rgba(10, 8, 6, 0.92) !important;
+  border-top:    1px solid rgba(255, 255, 255, 0.07) !important;
+  border-right:  1px solid rgba(255, 255, 255, 0.07) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  border-left:   2px solid rgba(99, 102, 241, 0.6)   !important;
+  border-left:   2px solid rgba(215, 210, 205, 0.55) !important;
   border-radius: 0.375rem !important;
   padding: 0.4rem 0.5rem !important;
   margin-bottom: 0.125rem !important;
