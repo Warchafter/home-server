@@ -54,6 +54,8 @@ services:
       - ${MEDIA_PATH:-/srv/media}:/media:ro
     networks:
       - proxy
+    group_add:
+      - "110"   # render group — required for VAAPI access to /dev/dri/renderD128
     devices:
       - /dev/dri:/dev/dri
     healthcheck:
