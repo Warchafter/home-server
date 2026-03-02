@@ -34,8 +34,10 @@ body::after {
   z-index: 0;
 }
 
-/* Section headers — indigo left border accent */
-#widgets-wrap h2 {
+/* Section headers — indigo left border accent
+   Actual container is #layout-groups > .services-group */
+#layout-groups h2,
+.services-group h2 {
   border-left: 3px solid rgba(99, 102, 241, 0.7);
   padding-left: 0.6rem;
   letter-spacing: 0.08em;
@@ -43,19 +45,18 @@ body::after {
   font-size: 0.7rem;
 }
 
-/* Card backgrounds — Homepage dark theme defaults to ~5% opacity which is
-   nearly invisible over a background image. Force a solid dark background. */
-#widgets-wrap li,
-#widgets-wrap li > div {
-  background: rgba(10, 15, 35, 0.88) !important;
+/* Card backgrounds — the actual card element has class "service-card".
+   Homepage dark theme applies bg-white/5 (5% opacity) by default. */
+.service-card {
+  background-color: rgba(10, 15, 35, 0.88) !important;
 }
 
 /* Card hover — lift + glow */
-#widgets-wrap li {
+li.service {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-#widgets-wrap li:hover {
+li.service:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
 }
