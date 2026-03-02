@@ -27,7 +27,7 @@
     - Tailscale:
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
-        description: Remote access VPN (runs on host, no container status)
+        description: Remote access VPN
 
 - Security:
     - Vaultwarden:
@@ -49,6 +49,26 @@
           url: http://jellyfin:8096
           key: "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}"
 
+    - Kavita:
+        icon: kavita.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8101"
+        description: Comics, manga & books
+        server: local
+        container: kavita
+        widget:
+          type: kavita
+          url: http://kavita:5000
+          username: "{{HOMEPAGE_VAR_KAVITA_USER}}"
+          password: "{{HOMEPAGE_VAR_KAVITA_PASS}}"
+
+    - Calibre-Web:
+        icon: calibre-web.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8102"
+        description: Ebook library
+        server: local
+        container: calibre-web
+
+- Downloads:
     - Sonarr:
         icon: sonarr.png
         href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8094"
@@ -106,29 +126,9 @@
     - Profilarr:
         icon: profilarr.png
         href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8103"
-        description: TRaSH profile sync for Sonarr/Radarr
+        description: TRaSH profile sync
         server: local
         container: profilarr
-
-- Reading:
-    - Kavita:
-        icon: kavita.png
-        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8101"
-        description: Comics, manga & book reader
-        server: local
-        container: kavita
-        widget:
-          type: kavita
-          url: http://kavita:5000
-          username: "{{HOMEPAGE_VAR_KAVITA_USER}}"
-          password: "{{HOMEPAGE_VAR_KAVITA_PASS}}"
-
-    - Calibre-Web:
-        icon: calibre-web.png
-        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8102"
-        description: Ebook library
-        server: local
-        container: calibre-web
 
 - Smart Home:
     - Home Assistant:
@@ -142,7 +142,7 @@
           url: http://homeassistant:8123
           key: "{{HOMEPAGE_VAR_HOMEASSISTANT_API_KEY}}"
 
-- File Sync:
+- Sync:
     - Syncthing:
         icon: syncthing.png
         href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8099"
@@ -150,7 +150,7 @@
         server: local
         container: syncthing
 
-- Monitoring:
+- Observability:
     - Grafana:
         icon: grafana.png
         href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8100"
@@ -167,22 +167,22 @@
         widget:
           type: uptimekuma
           url: http://uptime-kuma:3001
-          slug: default  # Must match a status page slug you create in Uptime Kuma UI
+          slug: default
 
     - Prometheus:
         icon: prometheus.png
-        description: Metrics collection (internal)
+        description: Metrics collection
         server: local
         container: prometheus
 
     - Node Exporter:
         icon: prometheus.png
-        description: Host metrics (internal)
+        description: Host metrics
         server: local
         container: node-exporter
 
     - cAdvisor:
         icon: cadvisor.png
-        description: Container metrics (internal)
+        description: Container metrics
         server: local
         container: cadvisor

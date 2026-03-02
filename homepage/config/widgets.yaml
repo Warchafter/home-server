@@ -2,11 +2,14 @@
 # Docs: https://gethomepage.dev/configs/widgets/
 
 - datetime:
-    text_size: xl
+    text_size: 2xl
     format:
-      dateStyle: long
+      dateStyle: full
       timeStyle: short
+      hour12: true
 
 - search:
     provider: google
     target: _blank
+    focus: false
+    showSearchSuggestions: true

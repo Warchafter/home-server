@@ -1,1 +1,58 @@
-/* Custom CSS — reserved for future use */
+/* ═══════════════════════════════════════════════════════
+   Deep Space Theme
+   ═══════════════════════════════════════════════════════ */
+
+/* Background: deep dark gradient — navy → midnight blue */
+html, body {
+  background: linear-gradient(
+    160deg,
+    #060810 0%,
+    #0b1020 35%,
+    #0d1530 65%,
+    #080c1a 100%
+  ) !important;
+  min-height: 100vh;
+}
+
+/* Subtle dot-grid texture over the background */
+#page_container {
+  background-image: radial-gradient(
+    rgba(148, 163, 184, 0.06) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+  background-attachment: fixed;
+}
+
+/* Vignette — darkens the edges to draw focus to center */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Section headers — indigo left border accent */
+#widgets-wrap h2 {
+  border-left: 3px solid rgba(99, 102, 241, 0.7);
+  padding-left: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+/* Card hover — lift + glow */
+#widgets-wrap li {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#widgets-wrap li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
+}

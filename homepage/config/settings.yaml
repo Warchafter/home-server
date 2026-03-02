@@ -4,8 +4,9 @@
 title: Home Server
 
 theme: dark
-color: slate
+color: indigo
 headerStyle: clean
+cardBlur: md
 useEqualHeights: true
 
 layout:
@@ -18,12 +19,15 @@ layout:
   Media:
     style: row
     columns: 3
+  Downloads:
+    style: row
+    columns: 3
   Smart Home:
     style: row
     columns: 2
-  File Sync:
+  Sync:
     style: row
     columns: 2
-  Monitoring:
+  Observability:
     style: row
-    columns: 2
+    columns: 3
