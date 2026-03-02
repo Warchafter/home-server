@@ -9,6 +9,13 @@ headerStyle: clean
 cardBlur: md
 useEqualHeights: true
 
+background:
+  image: https://w.wallhaven.cc/full/vg/wallhaven-vg33w3.jpg
+  blur: sm        # NOTE: keep this at sm or remove — higher values conflict with cardBlur
+  brightness: 30  # darken significantly so cards stay readable
+  saturate: 75    # slightly desaturated — lets the indigo accent color pop
+  opacity: 90
+
 layout:
   Infrastructure:
     style: row
