@@ -4,9 +4,8 @@
 title: Home Server
 
 theme: dark
-color: fuchsia
-headerStyle: boxed
-cardBlur: 3xl
+color: slate
+headerStyle: clean
 useEqualHeights: true
 
 layout:
