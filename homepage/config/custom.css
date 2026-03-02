@@ -43,6 +43,12 @@ body::after {
   font-size: 0.7rem;
 }
 
+/* Card backgrounds — Homepage dark theme defaults to ~5% opacity which is
+   nearly invisible over a background image. Force a solid dark background. */
+#widgets-wrap li > div:first-child {
+  background: rgba(10, 15, 35, 0.88) !important;
+}
+
 /* Card hover — lift + glow */
 #widgets-wrap li {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
