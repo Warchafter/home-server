@@ -9,7 +9,7 @@ headerStyle: clean
 useEqualHeights: true
 
 background:
-  image: https://w.wallhaven.cc/full/vg/wallhaven-vg33w3.jpg
+  image: https://w.wallhaven.cc/full/28/wallhaven-285v3m.jpg
   blur: sm
   brightness: 30  # enough to see mood/color without blinding highlights
   saturate: 60    # desaturated so neon blobs don't compete
