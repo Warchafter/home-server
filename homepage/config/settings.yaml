@@ -11,9 +11,9 @@ useEqualHeights: true
 
 background:
   image: https://w.wallhaven.cc/full/vg/wallhaven-vg33w3.jpg
-  blur: sm        # NOTE: keep this at sm or remove — higher values conflict with cardBlur
-  brightness: 30  # darken significantly so cards stay readable
-  saturate: 75    # slightly desaturated — lets the indigo accent color pop
+  blur: sm
+  brightness: 10  # very dark — just color/mood, not a distraction
+  saturate: 50    # heavily desaturated so the neon blobs don't compete
   opacity: 90
 
 layout:
