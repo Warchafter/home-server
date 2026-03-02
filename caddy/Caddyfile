@@ -69,10 +69,11 @@
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server
-		-X-Frame-Options
-		-Content-Security-Policy
 	}
-	reverse_proxy jellyfin:8096
+	reverse_proxy jellyfin:8096 {
+		header_down -X-Frame-Options
+		header_down -Content-Security-Policy
+	}
 }
 
 # ---------------------------------------------------------------------------
