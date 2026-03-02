@@ -71,12 +71,15 @@ services:
     networks:
       - proxy
     healthcheck:
-      # Use Gluetun's built-in control server instead of pinging an external
-      # service — avoids leaking VPN metadata to third parties every 30s.
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/v1/publicip/ip || exit 1"]
+      # Verify the VPN tunnel is actually up by checking for a non-empty public
+      # IP. The previous check only verified the control server responded, which
+      # allowed the container to report HEALTHY even when the tunnel was down.
+      # With this check, Docker will restart the container after 5 failed checks
+      # (~150s) if the VPN doesn't recover on its own.
+      test: ["CMD-SHELL", "[ \"$(wget -qO- http://localhost:8000/v1/publicip/ip)\" != '{\"public_ip\":\"\"}' ]"]
       interval: 30s
       timeout: 10s
-      start_period: 30s
+      start_period: 60s
       retries: 5
     deploy:
       resources:
