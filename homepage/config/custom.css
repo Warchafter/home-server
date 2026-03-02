@@ -34,8 +34,7 @@ body::after {
   z-index: 0;
 }
 
-/* Section headers — indigo left border accent
-   Actual container is #layout-groups > .services-group */
+/* Section headers — indigo left border accent */
 #layout-groups h2,
 .services-group h2 {
   border-left: 3px solid rgba(99, 102, 241, 0.7);
@@ -45,18 +44,30 @@ body::after {
   font-size: 0.7rem;
 }
 
-/* Card backgrounds — the actual card element has class "service-card".
-   Homepage dark theme applies bg-white/5 (5% opacity) by default. */
+/* ── Service cards ───────────────────────────────────────
+   .service-card is the actual card div confirmed via DevTools.
+   - Solid dark navy background
+   - Hairline border on 3 sides for definition
+   - Indigo left accent bar (2px) for visual rhythm
+   ─────────────────────────────────────────────────────── */
 .service-card {
-  background-color: rgba(10, 15, 35, 0.88) !important;
+  background-color: rgba(10, 15, 35, 0.92) !important;
+  border-top:    1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right:  1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-left:   2px solid rgba(99, 102, 241, 0.4)   !important;
 }
 
-/* Card hover — lift + glow */
+/* Card hover — lift + stronger glow + brighter accent */
 li.service {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 li.service:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
+  transform: translateY(-3px);
+}
+
+li.service:hover .service-card {
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.22) !important;
+  border-left-color: rgba(99, 102, 241, 0.7) !important;
 }
