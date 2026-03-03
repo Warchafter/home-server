@@ -12,14 +12,14 @@
 #   so peers can connect to you for better speeds.
 #
 # PROVIDER: ProtonVPN (Plus plan required for port forwarding)
+# PROTOCOL: WireGuard (faster than OpenVPN — lower overhead, higher throughput)
 #
 # SETUP:
-#   1. Get your OpenVPN credentials from ProtonVPN dashboard:
-#      Account > OpenVPN / IKEv2 username
-#   2. IMPORTANT: Append +pmp to your username for port forwarding.
-#      Example: if your username is "abc123", set PROTONVPN_USER=abc123+pmp
-#   3. Add to .env: PROTONVPN_USER and PROTONVPN_PASS
-#   4. docker compose up -d gluetun qbittorrent
+#   1. Go to https://account.proton.me → VPN → WireGuard
+#   2. Select Linux as platform, enable port forwarding
+#   3. Download the .conf file and copy the PrivateKey value
+#   4. Add to .env: PROTONVPN_WIREGUARD_KEY=<your-private-key>
+#   5. docker compose up -d gluetun qbittorrent
 #
 # VERIFY VPN IS WORKING:
 #   docker exec gluetun wget -qO- https://ipinfo.io
@@ -47,11 +47,10 @@ services:
       - /dev/net/tun:/dev/net/tun
     environment:
       - TZ=${TZ:-UTC}
-      # --- ProtonVPN via OpenVPN ---
+      # --- ProtonVPN via WireGuard ---
       - VPN_SERVICE_PROVIDER=protonvpn
-      - VPN_TYPE=openvpn
-      - OPENVPN_USER=${PROTONVPN_USER:?Set PROTONVPN_USER in .env}
-      - OPENVPN_PASSWORD=${PROTONVPN_PASS:?Set PROTONVPN_PASS in .env}
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${PROTONVPN_WIREGUARD_KEY:?Set PROTONVPN_WIREGUARD_KEY in .env}
       # Server selection — connect to a P2P-optimized server
       - SERVER_COUNTRIES=${PROTONVPN_COUNTRY:-Netherlands}
       # --- Port forwarding (requires ProtonVPN Plus) ---
