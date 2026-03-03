@@ -57,7 +57,7 @@ services:
     # Requires configuring Jellyfin: Dashboard > Playback > Transcoding
     #   → Transcode path: /transcode
     tmpfs:
-      - /transcode:size=2g
+      - /transcode:size=4g
     networks:
       - proxy
     group_add:
@@ -74,7 +74,7 @@ services:
       resources:
         limits:
           cpus: "2.00"
-          memory: 4096m  # 2GB tmpfs (transcode cache) + 2GB Jellyfin process headroom
+          memory: 6144m  # 4GB tmpfs (transcode cache) + 2GB Jellyfin process headroom
 
 volumes:
   jellyfin_config:
