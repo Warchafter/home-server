@@ -63,11 +63,15 @@ services:
       # Media root — must match the same mount in Sonarr/Radarr for hardlinks
       - ${MEDIA_PATH:-/srv/media}:/media
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v2/app/version || exit 1"]
+      # Check both qBittorrent web UI AND Gluetun control server. The localhost
+      # check alone always passes even when the network namespace is broken
+      # (stale after Gluetun restart/recreate). Checking Gluetun's control server
+      # ensures the VPN network is actually functional.
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v2/app/version && curl -sf http://localhost:8000/v1/publicip/ip || exit 1"]
       interval: 30s
-      timeout: 5s
-      start_period: 30s
-      retries: 3
+      timeout: 10s
+      start_period: 60s
+      retries: 5
     deploy:
       resources:
         limits:
