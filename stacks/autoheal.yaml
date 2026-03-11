@@ -1,0 +1,40 @@
+# =============================================================================
+# Docker Autoheal - Automatic Unhealthy Container Recovery
+# =============================================================================
+# Monitors all containers with healthchecks and automatically restarts any
+# that enter an "unhealthy" state. This is critical for the Gluetun/qBittorrent
+# pair: when Gluetun's VPN tunnel drops and restarts, qBittorrent's shared
+# network namespace breaks. The improved qBittorrent healthcheck detects this
+# (checks both WebUI + Gluetun control server), and autoheal restarts it.
+#
+# Without autoheal, Docker Compose only restarts containers when the main
+# process exits — it does NOT restart containers that are merely "unhealthy".
+#
+# =============================================================================
+
+services:
+  autoheal:
+    image: willfarrell/autoheal:1.2.0
+    container_name: autoheal
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      # Monitor all containers with healthchecks (not just labeled ones)
+      - AUTOHEAL_CONTAINER_LABEL=all
+      # Check every 30 seconds for unhealthy containers
+      - AUTOHEAL_INTERVAL=30
+      # Wait 0s before restarting (healthcheck retries already provide delay)
+      - AUTOHEAL_START_PERIOD=0
+      # Use the default restart timeout
+      - AUTOHEAL_DEFAULT_STOP_TIMEOUT=10
+    volumes:
+      # Read-only Docker socket access to monitor and restart containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.05"
+          memory: 32m
