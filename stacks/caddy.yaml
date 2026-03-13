@@ -22,24 +22,24 @@ services:
       - NET_BIND_SERVICE
     ports:
       # --- Phase 1 ---
-      - "${SERVER_IP:?Set SERVER_IP in .env}:80:80"           # Homepage dashboard (landing page)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8090:8090"       # Uptime Kuma
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8091:8091"       # AdGuard Home UI
+      - "80:80"           # Homepage dashboard (landing page)
+      - "8090:8090"       # Uptime Kuma
+      - "8091:8091"       # AdGuard Home UI
       # --- Phase 2 ---
       # Vaultwarden serves its own HTTPS (ROCKET_TLS) — not proxied through Caddy
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8093:8093"       # Jellyfin (media server)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8094:8094"       # Sonarr (TV management)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8095:8095"       # Radarr (movie management)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8096:8096"       # Prowlarr (indexer manager)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8097:8097"       # qBittorrent (download client)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8098:8098"       # Home Assistant (smart home)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8099:8099"       # Syncthing (file sync)
+      - "8093:8093"       # Jellyfin (media server)
+      - "8094:8094"       # Sonarr (TV management)
+      - "8095:8095"       # Radarr (movie management)
+      - "8096:8096"       # Prowlarr (indexer manager)
+      - "8097:8097"       # qBittorrent (download client)
+      - "8098:8098"       # Home Assistant (smart home)
+      - "8099:8099"       # Syncthing (file sync)
       # --- Phase 3 ---
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8100:8100"       # Grafana (metrics dashboards)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8101:8101"       # Kavita (comics/manga reader)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8102:8102"       # Calibre-Web (ebook server)
-      - "${SERVER_IP:?Set SERVER_IP in .env}:8103:8103"       # Profilarr (arr profile sync)
-      # - "${SERVER_IP:?Set SERVER_IP in .env}:443:443"       # HTTPS — uncomment when you add a domain
+      - "8100:8100"       # Grafana (metrics dashboards)
+      - "8101:8101"       # Kavita (comics/manga reader)
+      - "8102:8102"       # Calibre-Web (ebook server)
+      - "8103:8103"       # Profilarr (arr profile sync)
+      # - "443:443"       # HTTPS — uncomment when you add a domain
     volumes:
       # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro

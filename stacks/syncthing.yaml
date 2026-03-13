@@ -41,9 +41,9 @@ services:
       - STGUIADDRESS=0.0.0.0:8384
     ports:
       # Sync protocol — other Syncthing devices connect here directly
-      - "${SERVER_IP:?Set SERVER_IP in .env}:22000:22000/tcp"
+      - "22000:22000/tcp"
       # Local discovery — helps devices find each other on the same LAN
-      - "${SERVER_IP:?Set SERVER_IP in .env}:21027:21027/udp"
+      - "21027:21027/udp"
     volumes:
       # Syncthing home dir (identity, keys, config live in /var/syncthing/config)
       # Must mount at /var/syncthing, NOT /var/syncthing/config — the entrypoint
