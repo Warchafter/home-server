@@ -48,8 +48,8 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:6767/ || exit 1"]
       interval: 30s
-      timeout: 5s
-      start_period: 30s
+      timeout: 10s
+      start_period: 60s
       retries: 3
     deploy:
       resources:
