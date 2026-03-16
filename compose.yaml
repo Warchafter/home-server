@@ -26,6 +26,7 @@ include:
   - path: stacks/jellyfin.yaml
   - path: stacks/sonarr.yaml
   - path: stacks/radarr.yaml
+  - path: stacks/bazarr.yaml
   - path: stacks/prowlarr.yaml
   - path: stacks/gluetun.yaml
   - path: stacks/qbittorrent.yaml

@@ -1,0 +1,66 @@
+# =============================================================================
+# Bazarr - Automatic Subtitle Management
+# =============================================================================
+# Bazarr is a companion to Sonarr and Radarr that automatically downloads
+# subtitles from providers like OpenSubtitles. Define your language preferences
+# per show or movie, and Bazarr handles the rest.
+#
+# SETUP:
+#   1. Open http://SERVER_IP:8104 to access the web UI
+#   2. Settings > Languages → add your preferred subtitle languages
+#   3. Settings > Providers → add subtitle providers (e.g., OpenSubtitles.com)
+#      (free account at https://www.opensubtitles.com required)
+#   4. Settings > Sonarr → URL: http://sonarr:8989, add Sonarr API key
+#   5. Settings > Radarr → URL: http://radarr:7878, add Radarr API key
+#   6. Add your API key to .env (BAZARR_API_KEY) for the Homepage widget
+#      Find it in: Settings > General > API Key
+#
+# Access at: http://SERVER_IP:8104 (routed through Caddy)
+# =============================================================================
+
+services:
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:1.5.6
+    container_name: bazarr
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    environment:
+      - TZ=${TZ:-UTC}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    volumes:
+      # App config, database, logs
+      - bazarr_config:/config
+      # Media root — same mount as Sonarr/Radarr/Jellyfin so Bazarr can
+      # scan media files and write subtitle files alongside them
+      - ${MEDIA_PATH:-/srv/media}:/media
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6767/api/system/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256m
+
+volumes:
+  bazarr_config:
+    name: bazarr_config
+
+networks:
+  proxy:
+    external: true

@@ -171,6 +171,15 @@
 	reverse_proxy profilarr:6868
 }
 
+# ---------------------------------------------------------------------------
+# Bazarr — automatic subtitle management
+# Access at: http://SERVER_IP:8104
+# ---------------------------------------------------------------------------
+:8104 {
+	import security_headers
+	reverse_proxy bazarr:6767
+}
+
 # =============================================================================
 # DOMAIN MODE (uncomment when you have a domain)
 # See docs/adding-a-domain.md for step-by-step instructions.
@@ -246,4 +255,8 @@
 #
 # profilarr.home.{env.DOMAIN} {
 #     reverse_proxy profilarr:6868
+# }
+#
+# subs.home.{env.DOMAIN} {
+#     reverse_proxy bazarr:6767
 # }

@@ -39,6 +39,7 @@ services:
       - "8101:8101"       # Kavita (comics/manga reader)
       - "8102:8102"       # Calibre-Web (ebook server)
       - "8103:8103"       # Profilarr (arr profile sync)
+      - "8104:8104"       # Bazarr (subtitle management)
       # - "443:443"       # HTTPS — uncomment when you add a domain
     volumes:
       # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/

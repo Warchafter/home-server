@@ -123,6 +123,17 @@
           username: "{{HOMEPAGE_VAR_QBITTORRENT_USER}}"
           password: "{{HOMEPAGE_VAR_QBITTORRENT_PASS}}"
 
+    - Bazarr:
+        icon: bazarr.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8104"
+        description: Automatic subtitles
+        server: local
+        container: bazarr
+        widget:
+          type: bazarr
+          url: http://bazarr:6767
+          key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+
     - Profilarr:
         icon: profilarr.png
         href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8103"
