@@ -30,7 +30,7 @@ services:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     networks:
-      - proxy
+      - monitoring
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
       interval: 30s
@@ -48,5 +48,5 @@ volumes:
     name: prometheus_data
 
 networks:
-  proxy:
+  monitoring:
     external: true

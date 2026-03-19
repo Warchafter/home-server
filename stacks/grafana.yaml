@@ -25,7 +25,7 @@ services:
     cap_drop:
       - ALL
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:?Set GRAFANA_ADMIN_PASS in .env}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://${SERVER_IP:-localhost}:8100
     volumes:
@@ -33,6 +33,7 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - proxy
+      - monitoring
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/api/health || exit 1"]
       interval: 30s
@@ -51,4 +52,6 @@ volumes:
 
 networks:
   proxy:
+    external: true
+  monitoring:
     external: true

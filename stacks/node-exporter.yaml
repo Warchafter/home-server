@@ -33,7 +33,7 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     networks:
-      - proxy
+      - monitoring
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:9100/metrics || exit 1"]
       interval: 30s
@@ -47,5 +47,5 @@ services:
           memory: 64m
 
 networks:
-  proxy:
+  monitoring:
     external: true

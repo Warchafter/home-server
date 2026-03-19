@@ -28,7 +28,8 @@ services:
       # Which hostnames/IPs are allowed to access the dashboard.
       # Without this, Homepage rejects requests as a security measure.
       # Uses wildcard by default since this is behind a LAN/Tailscale.
-      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-*}
+      # Restrict to LAN (192.168.0.x) + Tailscale CGNAT range (100.64.0.0/10)
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-192.168.0.0/24,100.64.0.0/10}
       # Passed to config files as {{HOMEPAGE_VAR_SERVER_IP}}
       - HOMEPAGE_VAR_SERVER_IP=${SERVER_IP:-localhost}
       # AdGuard credentials for widget (set after completing AdGuard wizard)

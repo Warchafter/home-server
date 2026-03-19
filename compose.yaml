@@ -46,12 +46,20 @@ include:
 # =============================================================================
 # Shared Networks
 # =============================================================================
-# All services join this network so Caddy can reverse-proxy to them by
-# container name (e.g., "uptime-kuma:3001"). Docker's built-in DNS resolves
-# container names automatically on user-defined bridge networks — this does
-# NOT work on the default bridge network, which is why we create our own.
+# proxy:      All user-facing services join this network so Caddy can
+#             reverse-proxy to them by container name. Docker's built-in DNS
+#             resolves names automatically on user-defined bridge networks.
+#
+# monitoring: Isolated network for Prometheus, Node Exporter, cAdvisor, and
+#             Grafana. Keeps host metrics (CPU, RAM, disk, processes) away
+#             from application containers. Grafana is on BOTH networks —
+#             proxy (so Caddy can reach it) and monitoring (so it can query
+#             Prometheus).
 # =============================================================================
 networks:
   proxy:
     name: proxy
+    driver: bridge
+  monitoring:
+    name: monitoring
     driver: bridge

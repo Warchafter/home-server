@@ -7,7 +7,8 @@
 # FIRST RUN:
 #   1. Open http://SERVER_IP:8102
 #   2. Log in with default credentials: admin / admin123
-#   3. IMMEDIATELY change the admin password (Admin > Edit User)
+#   3. !! SECURITY: IMMEDIATELY change the admin password (Admin > Edit User)
+#      There is no config-level way to set this — it MUST be changed via the UI.
 #   4. Set the Calibre library location: /books
 #      - If you already have a Calibre library, copy it to /srv/media/books
 #      - If not, Calibre-Web needs a metadata.db file in /books
