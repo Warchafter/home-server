@@ -30,6 +30,7 @@ services:
       - uptime_kuma_data:/app/data
     networks:
       - proxy
+      - monitoring
     # Uncomment for direct access (bypassing Caddy):
     # ports:
     #   - "3001:3001"
@@ -53,4 +54,6 @@ volumes:
 
 networks:
   proxy:
+    external: true
+  monitoring:
     external: true
