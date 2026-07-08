@@ -55,9 +55,16 @@ services:
       - SERVER_COUNTRIES=${PROTONVPN_COUNTRY:-Netherlands}
       # --- Port forwarding (requires ProtonVPN Plus) ---
       # Gluetun automatically requests a forwarded port via NAT-PMP.
-      # The port is saved to /tmp/gluetun/forwarded_port for qBittorrent.
+      # ProtonVPN assigns a NEW port on every reconnect, so the up-command
+      # below pushes it into qBittorrent's API each time the tunnel comes up.
+      # This also forces libtorrent to rebind its sockets after a reconnect,
+      # which un-sticks magnets stuck on "downloading metadata".
+      # Requires "Bypass authentication for clients on localhost" in
+      # qBittorrent (Tools > Options > Web UI) — the request originates from
+      # inside the shared network namespace, so it arrives as 127.0.0.1.
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+      - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":{{PORTS}}}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
       # Allow qBittorrent's web UI and Gluetun control server through firewall
       - FIREWALL_INPUT_PORTS=8080,8000
       # Enable HTTP control server for Homepage widget (shows VPN public IP)
