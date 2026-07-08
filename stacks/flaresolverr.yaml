@@ -1,0 +1,54 @@
+# =============================================================================
+# FlareSolverr - Cloudflare Challenge Solver
+# =============================================================================
+# FlareSolverr runs a headless Chromium browser to solve Cloudflare challenges
+# on behalf of Prowlarr. Indexers behind Cloudflare (1337x, EZTV, etc.) fail
+# with "blocked by Cloudflare protection" without it.
+#
+# SETUP (in Prowlarr):
+#   1. Settings > Indexers > Add Indexer Proxy > FlareSolverr
+#      - Host: http://flaresolverr:8191
+#      - Tags: flaresolverr
+#   2. Edit each Cloudflare-blocked indexer and add the "flaresolverr" tag
+#   3. Re-test the indexer
+#
+# Not exposed on any host port and no Caddy route — only reachable by other
+# containers on the proxy network (Prowlarr talks to it by container name).
+#
+# NOTE: Chromium runs with --no-sandbox inside the container, so no
+# capabilities are needed despite running a browser. If a solve request fails,
+# the web server keeps answering the healthcheck, so a broken Chromium shows
+# up as Prowlarr test failures — not as an autoheal restart loop.
+# =============================================================================
+
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.5.0
+    container_name: flaresolverr
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - TZ=${TZ:-UTC}
+      - LOG_LEVEL=info
+    networks:
+      - proxy
+    healthcheck:
+      # Image has no curl/wget; use its own Python against the /health endpoint
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8191/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          # Chromium is the heavy part: each solve spawns a browser instance
+          cpus: "1.00"
+          memory: 1g
+
+networks:
+  proxy:
+    external: true

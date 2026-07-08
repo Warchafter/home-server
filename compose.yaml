@@ -28,6 +28,7 @@ include:
   - path: stacks/radarr.yaml
   - path: stacks/bazarr.yaml
   - path: stacks/prowlarr.yaml
+  - path: stacks/flaresolverr.yaml
   - path: stacks/gluetun.yaml
   - path: stacks/qbittorrent.yaml
   - path: stacks/homeassistant.yaml
