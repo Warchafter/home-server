@@ -1,0 +1,54 @@
+# =============================================================================
+# Home Server MCP - Read-Only AI Tool Server
+# =============================================================================
+# A Model Context Protocol (MCP) server exposing the server's operational
+# state to AI clients: Claude Code on the dev laptop and Odysseus (local LLM
+# workspace). Streamable HTTP transport, routed through Caddy at :8105.
+#
+# Tools: container list/details/logs (via dockerproxy — POST is blocked, so
+# strictly read-only), ad-hoc PromQL queries, and a health digest mirroring
+# scripts/health-report.py.
+#
+# Client setup (from a LAN/Tailscale machine):
+#   claude mcp add --transport http homeserver http://SERVER_IP:8105/mcp
+#   Odysseus: Settings > MCP > add HTTP server with the same URL
+#
+# SECURITY: no auth, LAN/Tailscale-only like everything else. Keep this
+# service read-only — do NOT add restart/exec tools without adding auth.
+# =============================================================================
+
+services:
+  mcp:
+    build: ../mcp
+    container_name: mcp
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      - DOCKER_PROXY_URL=http://dockerproxy:2375
+      - PROMETHEUS_URL=http://prometheus:9090
+    networks:
+      - proxy        # reach dockerproxy; be reachable by Caddy
+      - monitoring   # reach Prometheus (internal-only network)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256m
+
+networks:
+  proxy:
+    external: true
+  monitoring:
+    external: true

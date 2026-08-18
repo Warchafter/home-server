@@ -8,7 +8,7 @@ Config-as-code for a personal home server running Docker Compose on an HP SFF de
 HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 ├── Tailscale (host-level VPN — not a container)
 ├── Docker Engine + Compose v2 (22 containers)
-│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8103)
+│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8105)
 │   ├── Docker Proxy     ─ secure Docker socket proxy for Homepage
 │   ├── AdGuard Home     ─ DNS + ad blocking (port 53)
 │   ├── Uptime Kuma      ─ uptime monitoring (via Caddy :8090)
@@ -78,6 +78,8 @@ Then open `http://<SERVER_IP>` for the dashboard.
 | Kavita | `http://SERVER_IP:8101` | Comics, manga & book reader |
 | Calibre-Web | `http://SERVER_IP:8102` | Ebook library server |
 | Profilarr | `http://SERVER_IP:8103` | TRaSH profile sync for Sonarr/Radarr |
+| Bazarr | `http://SERVER_IP:8104` | Automatic subtitle management |
+| MCP | `http://SERVER_IP:8105/mcp` | Read-only AI tool server (Claude Code / Odysseus) |
 | Tailscale | Host-level | Secure remote access from anywhere via VPN |
 
 ## Project Structure

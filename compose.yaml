@@ -43,6 +43,8 @@ include:
   - path: stacks/kavita.yaml
   - path: stacks/calibre-web.yaml
   - path: stacks/profilarr.yaml
+  # --- Phase 4: AI Integration ---
+  - path: stacks/mcp.yaml
 
 # =============================================================================
 # Shared Networks

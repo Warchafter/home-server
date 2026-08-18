@@ -180,6 +180,16 @@
 	reverse_proxy bazarr:6767
 }
 
+# ---------------------------------------------------------------------------
+# MCP — read-only AI tool server (Claude Code / Odysseus clients)
+# Access at: http://SERVER_IP:8105/mcp
+# Streams responses (streamable HTTP transport); Caddy auto-flushes SSE.
+# ---------------------------------------------------------------------------
+:8105 {
+	import security_headers
+	reverse_proxy mcp:8000
+}
+
 # =============================================================================
 # DOMAIN MODE (uncomment when you have a domain)
 # See docs/adding-a-domain.md for step-by-step instructions.
