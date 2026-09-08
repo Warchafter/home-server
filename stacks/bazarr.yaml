@@ -37,6 +37,12 @@ services:
       - TZ=${TZ:-UTC}
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
+    # Force IPv4-only. Bazarr's outbound calls (subtitle providers) can fail with
+    # "Resource temporarily unavailable :443" — a .NET SocketException(11) from
+    # the host having IPv6 enabled-but-non-functional and the resolver returning
+    # AAAA records. Same root cause as radarr.
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
     volumes:
       # App config, database, logs
       - bazarr_config:/config
