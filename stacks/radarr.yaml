@@ -43,6 +43,14 @@ services:
       - TZ=${TZ:-UTC}
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
+    # Force IPv4-only inside the container. Radarr's metadata lookups hit
+    # api.radarr.video, which can return AAAA records; when the host's IPv6 is
+    # enabled-but-non-functional, .NET tries IPv6 first and fails with
+    # "Resource temporarily unavailable (api.radarr.video:443)". Disabling IPv6
+    # here forces IPv4 and avoids that dead path. (Servarr wiki: metadata/DNS
+    # troubleshooting — "local IPv6 issues, typically enabled but non-functional".)
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
     volumes:
       # App config, database, logs
       - radarr_config:/config
