@@ -13,6 +13,7 @@ misbehaving client can only look, never touch.
 """
 
 import os
+import re
 import time
 
 import httpx
@@ -71,6 +72,35 @@ def _val(item) -> float:
 
 def _by_name(results: list) -> dict:
     return {r["metric"]["name"]: _val(r) for r in results if r["metric"].get("name")}
+
+
+async def _prom_safe(promql: str, notes: list[str]) -> list:
+    """_prom that degrades instead of failing the whole digest."""
+    try:
+        return await _prom(promql)
+    except Exception as e:  # noqa: BLE001
+        notes.append(f"Prometheus query failed: {e}")
+        return []
+
+
+_UP_RE = re.compile(r"^Up (?:(About a|About an|Less than a|\d+) )?(second|minute|hour|day|week|month|year)s?", re.I)
+_UNIT_MIN = {"second": 1 / 60, "minute": 1, "hour": 60, "day": 1440, "week": 10080, "month": 43200, "year": 525600}
+STUCK_STARTING_MIN = 5
+
+
+def _up_minutes(status: str) -> float | None:
+    """Minutes a container has been up, parsed from Docker's Status text ("Up 2 minutes (healthy)")."""
+    m = _UP_RE.match(status or "")
+    if not m:
+        return None
+    qty, unit = m.group(1), m.group(2).lower()
+    if qty in (None, "About a", "About an"):
+        n = 1.0
+    elif qty == "Less than a":
+        n = 0.0
+    else:
+        n = float(qty)
+    return n * _UNIT_MIN[unit]
 
 
 def _demux_logs(body: bytes) -> str:
@@ -222,32 +252,56 @@ async def prometheus_query_range(promql: str, hours: float = 6, step: str = "5m"
 
 @mcp.tool()
 async def health_summary(window: str = "7d") -> str:
-    """Full health digest: container memory/restarts/CPU-throttle, host
-    CPU/load/memory/swap, disk usage with time-to-full projection,
-    temperatures, network drops, and any non-running/unhealthy containers.
+    """Full health digest: container states (incl. containers stuck in
+    health=starting, the crash-loop signature), Prometheus scrape health,
+    container memory/restarts/CPU-throttle, host CPU/load/memory/swap, disk
+    usage with time-to-full projection, temperatures, network drops.
 
     `window` sets the restart-count lookback (default "7d", max useful "30d").
-    Lines flagged with <-- exceed a threshold and deserve attention.
+    Lines flagged with <-- exceed a threshold and deserve attention. Sections
+    that say "no data" mean Prometheus is not returning samples — on this box
+    that has meant a full disk (its WAL stops writing and the head empties).
     """
     lines: list[str] = ["HOME SERVER HEALTH SUMMARY"]
+    notes: list[str] = []
 
-    # Containers not running / unhealthy (dockerproxy)
+    # Containers not running / unhealthy / stuck starting (dockerproxy)
     containers = await _docker_get("/containers/json", params={"all": "true"})
-    problems = [
-        f"  {c['Names'][0].lstrip('/'):<22}{c['State']:<12}{c['Status']}"
-        for c in containers
-        if c["State"] != "running" or "unhealthy" in c["Status"]
-    ]
+    problems = []
+    for c in containers:
+        name, state, status = c["Names"][0].lstrip("/"), c["State"], c["Status"]
+        note = None
+        if state != "running":
+            note = "not running"
+        elif "unhealthy" in status:
+            note = "unhealthy"
+        elif "health: starting" in status:
+            mins = _up_minutes(status)
+            if mins is not None and mins >= STUCK_STARTING_MIN:
+                note = "stuck in health=starting — crash/restart loop?"
+        if note:
+            problems.append(f"  {name:<22}{state:<12}{status}  <-- {note}")
     lines.append(f"\n=== CONTAINER STATES ({len(containers)} total) ===")
     lines.extend(problems or ["  all running and healthy"])
 
+    # Prometheus itself: are the scrape targets alive and is it ingesting at all?
+    lines.append("\n=== MONITORING ===")
+    targets = await _prom_safe("up", notes)
+    if not targets:
+        lines.append("  no samples from Prometheus at all — storage unwritable (full disk?) or Prometheus down  <--")
+    else:
+        down = [f"{r['metric'].get('job', '?')} ({r['metric'].get('instance', '?')})" for r in targets if _val(r) == 0]
+        lines.append(f"  {len(targets)} scrape targets, {len(down)} down" + (f": {', '.join(down)}  <--" if down else ""))
+
     # Container resources (cAdvisor)
-    usage = _by_name(await _prom('container_memory_usage_bytes{name!=""}'))
-    limit = _by_name(await _prom('container_spec_memory_limit_bytes{name!=""}'))
-    restarts = _by_name(await _prom(f'changes(container_start_time_seconds{{name!=""}}[{window}])'))
-    thr = _by_name(await _prom('rate(container_cpu_cfs_throttled_periods_total{name!=""}[1h])'))
-    per = _by_name(await _prom('rate(container_cpu_cfs_periods_total{name!=""}[1h])'))
+    usage = _by_name(await _prom_safe('container_memory_usage_bytes{name!=""}', notes))
+    limit = _by_name(await _prom_safe('container_spec_memory_limit_bytes{name!=""}', notes))
+    restarts = _by_name(await _prom_safe(f'changes(container_start_time_seconds{{name!=""}}[{window}])', notes))
+    thr = _by_name(await _prom_safe('rate(container_cpu_cfs_throttled_periods_total{name!=""}[1h])', notes))
+    per = _by_name(await _prom_safe('rate(container_cpu_cfs_periods_total{name!=""}[1h])', notes))
     lines.append(f"\n=== CONTAINERS — memory vs limit, restarts/{window}, CPU throttle ===")
+    if not usage:
+        lines.append("  no data (cAdvisor metrics missing from Prometheus)")
     for name in sorted(usage):
         mem, lim = usage[name], limit.get(name, 0)
         pct = mem / lim * 100 if lim > 0 else 0
@@ -262,25 +316,30 @@ async def health_summary(window: str = "7d") -> str:
 
     # Host
     lines.append("\n=== HOST ===")
+    host_lines = 0
     for label, promql, fmt in (
         ("CPU busy", '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)', "{:.1f}%"),
         ("Load (1m)", "node_load1", "{:.2f}"),
         ("Mem available", "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100", "{:.1f}%"),
         ("Swap used (MB)", "(node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) / 1048576", "{:.0f}"),
     ):
-        result = await _prom(promql)
+        result = await _prom_safe(promql, notes)
         if result:
             lines.append(f"  {label:<16}{fmt.format(_val(result[0]))}")
+            host_lines += 1
+    if not host_lines:
+        lines.append("  no data (node-exporter metrics missing from Prometheus)")
 
     # Disk + time-to-full projection (linear from last 6h)
     lines.append("\n=== DISK ===")
-    avail = await _prom('node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}')
-    size = await _prom('node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"}')
-    predict = await _prom(
-        'predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}[6h], 7*86400)'
-    )
+    fs = '{fstype!~"tmpfs|overlay|squashfs"}'
+    avail = await _prom_safe(f"node_filesystem_avail_bytes{fs}", notes)
+    size = await _prom_safe(f"node_filesystem_size_bytes{fs}", notes)
+    predict = await _prom_safe(f"predict_linear(node_filesystem_avail_bytes{fs}[6h], 7*86400)", notes)
     size_by_mp = {r["metric"].get("mountpoint"): _val(r) for r in size}
     pred_by_mp = {r["metric"].get("mountpoint"): _val(r) for r in predict}
+    if not avail:
+        lines.append("  no data (node-exporter filesystem metrics missing from Prometheus)")
     for r in sorted(avail, key=lambda x: x["metric"].get("mountpoint", "")):
         mp = r["metric"].get("mountpoint", "?")
         a, s = _val(r), size_by_mp.get(mp, 0)
@@ -296,7 +355,7 @@ async def health_summary(window: str = "7d") -> str:
         lines.append(f"  {mp:<14}{_human_bytes(a):>10} free / {_human_bytes(s)} ({used_pct:.0f}% used){ttf}{flag}")
 
     # Temperatures (NVMe hotspot has hit critical before — watch it)
-    temps = await _prom("node_hwmon_temp_celsius")
+    temps = await _prom_safe("node_hwmon_temp_celsius", notes)
     if temps:
         lines.append("\n=== TEMPERATURES ===")
         for r in sorted(temps, key=lambda x: -_val(x)):
@@ -306,14 +365,21 @@ async def health_summary(window: str = "7d") -> str:
             lines.append(f"  {label:<40}{t:>6.1f}C{'  <--' if t >= 75 else ''}")
 
     # Network drops on physical NICs
-    drops = await _prom(
-        'rate(node_network_receive_drop_total{device!~"lo|veth.*|docker.*|br.*|tailscale.*"}[5m])'
+    drops = await _prom_safe(
+        'rate(node_network_receive_drop_total{device!~"lo|veth.*|docker.*|br.*|tailscale.*"}[5m])', notes
     )
     dropped = [f"  {r['metric'].get('device', '?'):<12}{_val(r):.2f} drops/s  <--" for r in drops if _val(r) > 0]
     lines.append("\n=== NETWORK ===")
     lines.extend(dropped or ["  no receive drops on physical NICs"])
 
-    lines.append("\n(<-- flags: mem>=85%, restarts>=3, throttle>=5%, disk>=85%, temp>=75C)")
+    if notes:
+        lines.append("\n=== NOTES ===")
+        lines.extend(f"  {n}" for n in dict.fromkeys(notes))
+
+    lines.append(
+        "\n(<-- flags: mem>=85%, restarts>=3, throttle>=5%, disk>=85%, temp>=75C, "
+        f"health=starting>={STUCK_STARTING_MIN}min)"
+    )
     return "\n".join(lines)
 
 

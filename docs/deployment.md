@@ -84,6 +84,25 @@ docker compose up -d --force-recreate
 **WARNING:** Never run `docker compose down -v` — the `-v` flag destroys all
 persistent data (AdGuard config, Uptime Kuma monitors, Caddy certificates).
 
+## Alerting
+
+Uptime Kuma watches the HTTP services but needs a notification channel to be
+useful: Settings > Notifications > add Telegram or Discord, then enable it on
+every monitor. Both are outbound webhooks and work from a LAN-only server.
+
+Disk space and crash loops are watched by `scripts/alert-check.py`, which runs
+from cron on the host and does not depend on Prometheus (Prometheus is the
+first thing a full disk kills). Set `ALERT_DISCORD_WEBHOOK` and/or the
+`ALERT_TELEGRAM_*` values in `.env`, then:
+```bash
+python3 scripts/alert-check.py --test     # confirm delivery
+python3 scripts/alert-check.py --print    # see what it would report right now
+crontab -e                                 # add:
+# */10 * * * * /usr/bin/python3 /home/wachacha/home-server/scripts/alert-check.py >> /var/tmp/alert-check.log 2>&1
+```
+It alerts once per new problem, reminds every 24 h while it persists, and
+sends a resolved message when it clears.
+
 ## Backups
 
 **Vaultwarden (automated):** The `vaultwarden-backup` container runs daily
@@ -105,3 +124,68 @@ To dump a volume to a tarball:
 docker run --rm -v adguard_conf:/data -v $(pwd):/backup busybox \
   tar czf /backup/adguard_conf_backup.tar.gz -C /data .
 ```
+
+## Runbooks
+
+### Disk full / Sonarr, Radarr, Prowlarr, Bazarr crash-looping
+
+Signature: those four return 502 and sit in `health: starting` forever while
+everything read-mostly stays up; Prometheus logs `write to WAL ... no space
+left on device`; Grafana logs `database or disk is full`. `df` can read 97%
+and still mean zero: ext4 reserves ~5% for root, and the containers run
+unprivileged. Running SQLite apps survive a full disk and die at their NEXT
+restart, so a deploy days later can look like the deploy broke them.
+
+1. Find the space. Deleting in Sonarr/Radarr only removes the library hardlink;
+   the qBittorrent copy keeps the bytes. Files with a single link under
+   `downloads/complete` exist nowhere else:
+   ```bash
+   sudo find /srv/media/downloads/complete -type f -links 1 -size +100M -printf '%s\t%p\n' \
+     | awk -F'\t' '{s+=$1; n++} END {printf "%d files, %.1f GB reclaimable\n", n, s/1e9}'
+   ```
+2. Reclaim it: delete those files, restart qBittorrent so it notices, then in
+   its web UI filter **Errored**, select all, Remove.
+   ```bash
+   sudo find /srv/media/downloads/complete -type f -links 1 -size +100M -delete
+   sudo find /srv/media/downloads/complete -mindepth 1 -type d -empty -delete
+   docker compose restart qbittorrent
+   ```
+3. autoheal brings the four *arr containers back within ~2 minutes. Prometheus
+   resumes on its own; restart it only if Grafana stays blank.
+
+To stop this recurring: qBittorrent > Options > BitTorrent > Seeding Limits
+with the action "Remove torrent and its files" (the library hardlink survives),
+and Sonarr/Radarr > Settings > Download Clients > "Remove Completed".
+
+### Jellyfin: deleted shows linger, new shows never appear
+
+Jellyfin 10.11 bug (fixed only in 12.0): removing an item can fail with
+`UNIQUE constraint failed: UserData.ItemId, UserData.UserId, UserData.CustomDataKey`
+and every library refresh aborts at that point. Check:
+```bash
+docker logs jellyfin --since 1h 2>&1 | grep -c 'UNIQUE constraint'
+```
+Fix with the bundled script (dry run first, then `--delete`):
+```bash
+docker compose stop jellyfin
+sudo python3 scripts/jellyfin-prune-stale-userdata.py
+sudo python3 scripts/jellyfin-prune-stale-userdata.py --delete
+docker compose start jellyfin
+# Jellyfin > Dashboard > Libraries > Scan All Libraries
+```
+
+### Containers can't resolve DNS (SERVFAIL from 127.0.0.11)
+
+Signature: Syncthing logs `lookup relays.syncthing.net on 127.0.0.11:53: server
+misbehaving`; Jellyfin and the *arrs log `Resource temporarily unavailable
+(host:443)` (that is errno EAGAIN from getaddrinfo, a DNS failure, not a
+connection failure). Cause so far has always been Tailscale putting
+100.100.100.100 into the host's resolv.conf:
+```bash
+resolvectl status | head -5          # Global "Current DNS Server: 100.100.100.100" = regressed
+sudo tailscale set --accept-dns=false
+docker compose up -d                 # containers read DNS config at (re)create time
+```
+The outbound-calling stacks pin `dns:` to `CONTAINER_DNS` + 1.1.1.1 so this
+can no longer reach them; the commands above are for the host itself.
+

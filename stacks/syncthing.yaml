@@ -54,6 +54,13 @@ services:
       # Media root — allows syncing any subfolder (books, comics, etc.)
       # without needing to add new volume mounts each time
       - ${MEDIA_PATH:-/srv/media}:/srv/media
+    # Pin upstream DNS instead of inheriting the host's resolv.conf. Tailscale
+    # MagicDNS (100.100.100.100) has ended up in there before and every lookup
+    # from inside the containers returned SERVFAIL. Set CONTAINER_DNS in .env to
+    # your router or AdGuard; Cloudflare is the fallback either way.
+    dns:
+      - ${CONTAINER_DNS:-1.0.0.1}
+      - 1.1.1.1
     networks:
       - proxy
     healthcheck:
