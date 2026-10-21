@@ -6,7 +6,7 @@ RUN useradd --uid 1000 --user-group --no-create-home mcp
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY server.py .
+COPY *.py ./
 
 USER mcp
 EXPOSE 8000

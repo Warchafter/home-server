@@ -5,16 +5,27 @@
 # state to AI clients: Claude Code on the dev laptop and Odysseus (local LLM
 # workspace). Streamable HTTP transport, routed through Caddy at :8105.
 #
-# Tools: container list/details/logs (via dockerproxy — POST is blocked, so
-# strictly read-only), ad-hoc PromQL queries, and a health digest mirroring
-# scripts/health-report.py.
+# Tools (all read-only):
+#   containers  list_services, service_details, service_logs, service_logs_grep,
+#               restart_events, docker_disk_usage        (via dockerproxy, POST blocked)
+#   metrics     prometheus_query, prometheus_query_range  (Prometheus)
+#   media       media_usage, download_orphans            (/media mounted :ro)
+#   apps        arr_status, qbittorrent_status, jellyfin_status
+#               (the apps' own APIs, GET only, keys from .env)
+#   dns         dns_check  (host resolver dir mounted :ro; this container has
+#               NO dns: pin on purpose so it inherits host DNS like an
+#               unpinned container would — it is the canary)
+#   digest      health_summary (all of the above in one call)
 #
 # Client setup (from a LAN/Tailscale machine):
 #   claude mcp add --transport http homeserver http://SERVER_IP:8105/mcp
 #   Odysseus: Settings > MCP > add HTTP server with the same URL
 #
-# SECURITY: no auth, LAN/Tailscale-only like everything else. Keep this
-# service read-only — do NOT add restart/exec tools without adding auth.
+# SECURITY: no auth, LAN/Tailscale-only like everything else. The app API
+# keys below let anyone who can reach :8105 read queues, torrent names and
+# library paths — the same data Homepage already serves unauthenticated.
+# Keep this service read-only — do NOT add restart/exec/write tools without
+# adding auth.
 # =============================================================================
 
 services:
@@ -32,8 +43,23 @@ services:
     environment:
       - DOCKER_PROXY_URL=http://dockerproxy:2375
       - PROMETHEUS_URL=http://prometheus:9090
+      # App APIs — same keys Homepage uses. Leave blank to disable that tool.
+      - SONARR_API_KEY=${SONARR_API_KEY:-}
+      - RADARR_API_KEY=${RADARR_API_KEY:-}
+      - PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
+      - BAZARR_API_KEY=${BAZARR_API_KEY:-}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+      - QBITTORRENT_USER=${QBITTORRENT_USER:-admin}
+      - QBITTORRENT_PASS=${QBITTORRENT_PASS:-}
+    volumes:
+      # Media root, read-only: disk forensics (media_usage, download_orphans)
+      # and Jellyfin stale-item checks. Same mount path as the media stacks.
+      - ${MEDIA_PATH:-/srv/media}:/media:ro
+      # Host resolver state, read-only: dns_check flags Tailscale MagicDNS
+      # taking over the host's resolv.conf.
+      - /run/systemd/resolve:/host/resolve:ro
     networks:
-      - proxy        # reach dockerproxy; be reachable by Caddy
+      - proxy        # reach dockerproxy, the apps, and be reachable by Caddy
       - monitoring   # reach Prometheus (internal-only network)
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]

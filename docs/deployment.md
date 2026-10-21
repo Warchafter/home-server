@@ -125,6 +125,28 @@ docker run --rm -v adguard_conf:/data -v $(pwd):/backup busybox \
   tar czf /backup/adguard_conf_backup.tar.gz -C /data .
 ```
 
+## Diagnosing from a laptop (MCP server)
+
+The `mcp` container exposes read-only tools at `http://SERVER_IP:8105/mcp`
+for Claude Code or any MCP client, so most of what the runbooks below do by
+hand can be read remotely first:
+
+| Question | Tool |
+|---|---|
+| Is anything down, looping, full, hot, or complaining? | `health_summary` |
+| What is in this container's log matching X since Y? | `service_logs_grep` |
+| Is a container restart-looping? | `restart_events` |
+| What is eating the disk, and is it hardlinked? | `media_usage`, `download_orphans` |
+| What do Sonarr/Radarr/Prowlarr report (health, queue, missing)? | `arr_status` |
+| Which torrents are errored/stalled; what are the seeding limits? | `qbittorrent_status` |
+| Did Jellyfin's last scan work; are there phantom entries? | `jellyfin_status` |
+| Is container DNS broken / did Tailscale take over host DNS? | `dns_check` |
+| What do Docker images/volumes occupy? | `docker_disk_usage` |
+
+After changing `mcp/*.py`: `docker compose build mcp && docker compose up -d mcp`.
+Run `python3 mcp/selftest.py` locally first; it exercises the pure helpers
+without needing the server.
+
 ## Runbooks
 
 ### Disk full / Sonarr, Radarr, Prowlarr, Bazarr crash-looping

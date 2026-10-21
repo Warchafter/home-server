@@ -47,7 +47,9 @@ services:
       - PLUGINS=0
       - SESSION=0
       - SWARM=0
-      - SYSTEM=0
+      # SYSTEM=1 only for GET /system/df (docker_disk_usage in the MCP server);
+      # POST=0 above still blocks /system/prune and friends.
+      - SYSTEM=1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
