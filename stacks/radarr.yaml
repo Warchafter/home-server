@@ -67,7 +67,7 @@ services:
       resources:
         limits:
           cpus: "0.50"
-          memory: 256m
+          memory: 512m
 
 volumes:
   radarr_config:

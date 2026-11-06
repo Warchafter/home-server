@@ -54,8 +54,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: 256m
+          cpus: "0.50"
+          memory: 384m
 
 volumes:
   calibreweb_config:

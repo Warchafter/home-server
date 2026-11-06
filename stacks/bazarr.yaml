@@ -62,7 +62,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: 256m
+          memory: 512m
 
 volumes:
   bazarr_config:
