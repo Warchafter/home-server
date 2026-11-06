@@ -28,7 +28,7 @@
 
 services:
   vaultwarden-backup:
-    image: ttionya/vaultwarden-backup:1.26.2
+    image: ttionya/vaultwarden-backup:1.27.2
     container_name: vaultwarden-backup
     restart: unless-stopped
     security_opt:

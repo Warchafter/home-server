@@ -21,7 +21,7 @@
 
 services:
   syncthing:
-    image: syncthing/syncthing:1.29
+    image: syncthing/syncthing:2.1.7
     container_name: syncthing
     restart: unless-stopped
     security_opt:
@@ -67,7 +67,9 @@ services:
       test: ["CMD-SHELL", "curl -sf http://localhost:8384/rest/noauth/health || exit 1"]
       interval: 30s
       timeout: 5s
-      start_period: 15s
+      # 2.x migrates the index DB (LevelDB -> SQLite) on first start and the
+      # GUI is silent meanwhile; a short grace got other installs restart-looped.
+      start_period: 15m
       retries: 3
     deploy:
       resources:

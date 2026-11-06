@@ -29,7 +29,7 @@
 
 services:
   gluetun:
-    image: qmcgaw/gluetun:v3.41.1
+    image: qmcgaw/gluetun:v3.41.3
     container_name: gluetun
     restart: unless-stopped
     security_opt:
@@ -82,7 +82,10 @@ services:
       # allowed the container to report HEALTHY even when the tunnel was down.
       # With this check, Docker will restart the container after 5 failed checks
       # (~150s) if the VPN doesn't recover on its own.
-      test: ["CMD-SHELL", "[ \"$(wget -qO- http://localhost:8000/v1/publicip/ip)\" != '{\"public_ip\":\"\"}' ]"]
+      # The wget must succeed AND return a non-empty IP: previously a failed
+      # request produced "" which compared unequal to the empty-IP JSON and
+      # passed — a dead control server looked healthy.
+      test: ["CMD-SHELL", "ip=$(wget -qO- http://localhost:8000/v1/publicip/ip) && [ -n \"$ip\" ] && [ \"$ip\" != '{\"public_ip\":\"\"}' ]"]
       interval: 30s
       timeout: 10s
       start_period: 60s

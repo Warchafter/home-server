@@ -17,7 +17,7 @@
 
 services:
   profilarr:
-    image: santiagosayshey/profilarr:v1.0.0
+    image: santiagosayshey/profilarr:v1.1.5
     container_name: profilarr
     restart: unless-stopped
     security_opt:

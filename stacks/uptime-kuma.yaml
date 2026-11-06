@@ -11,20 +11,21 @@
 # the ports section below.
 #
 # Access at: http://SERVER_IP:8090 (routed through Caddy)
+#
+# 2.x: no PUID/setpriv entrypoint any more, so no SETUID/SETGID. The first
+# start after 1.23 runs a one-way data migration — stop autoheal and do not
+# interrupt it (docs/upgrade-2026-11.md).
 # =============================================================================
 
 services:
   uptime-kuma:
-    image: louislam/uptime-kuma:1.23.16
+    image: louislam/uptime-kuma:2.5.9
     container_name: uptime-kuma
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - SETUID
-      - SETGID
     volumes:
       # Monitoring data is stored in SQLite inside this volume
       - uptime_kuma_data:/app/data
@@ -37,11 +38,14 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3001/api/entry || exit 1"]
-      interval: 30s
-      timeout: 5s
-      start_period: 15s
-      retries: 3
+      # The image's own Go probe (GET /). /api/entry was never a real route —
+      # it only passed via the SPA catch-all — and 2.x's temporary migration
+      # server 404s it, which would get autoheal to kill the v1->v2 migration.
+      test: ["CMD", "extra/healthcheck"]
+      interval: 60s
+      timeout: 30s
+      start_period: 180s
+      retries: 5
     deploy:
       resources:
         limits:

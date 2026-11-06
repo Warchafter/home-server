@@ -26,7 +26,7 @@
 
 services:
   sonarr:
-    image: linuxserver/sonarr:4.0.16
+    image: linuxserver/sonarr:4.0.20
     container_name: sonarr
     restart: unless-stopped
     security_opt:

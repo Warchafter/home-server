@@ -35,9 +35,13 @@
 
 services:
   jellyfin:
-    image: jellyfin/jellyfin:10.11.6
+    image: jellyfin/jellyfin:12.4
     container_name: jellyfin
     restart: unless-stopped
+    labels:
+      # Jellyfin 12+ publishes two-part tags only (12.4) — Diun's default
+      # filter wants x.y.z, so override it here.
+      - "diun.include_tags=^\\d+\\.\\d+$$"  # $$ = literal $ (Compose interpolation)
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -75,7 +79,8 @@ services:
       test: ["CMD-SHELL", "curl -sf http://localhost:8096/health || exit 1"]
       interval: 30s
       timeout: 5s
-      start_period: 30s
+      # 12.x rewrites the DB on first boot after 10.11 and the first scan is long
+      start_period: 10m
       retries: 3
     deploy:
       resources:
