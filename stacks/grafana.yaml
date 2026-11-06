@@ -17,7 +17,7 @@
 
 services:
   grafana:
-    image: grafana/grafana:12.4.0
+    image: grafana/grafana:13.3.0
     container_name: grafana
     restart: unless-stopped
     security_opt:
@@ -28,6 +28,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:?Set GRAFANA_ADMIN_PASS in .env}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://${SERVER_IP:-localhost}:8100
+      # Privacy: no usage stats, update pings or news feed to grafana.com
+      # (Diun reports new image versions instead).
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+      - GF_ANALYTICS_FEEDBACK_LINKS_ENABLED=false
+      - GF_NEWS_NEWS_FEED_ENABLED=false
     volumes:
       - ../grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana

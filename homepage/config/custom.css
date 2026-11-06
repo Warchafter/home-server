@@ -17,7 +17,7 @@ html, body {
 }
 
 /* Subtle dot-grid texture over the background */
-#page_container {
+#__next {
   background-image: radial-gradient(
     rgba(255, 255, 255, 0.04) 1px,
     transparent 1px
@@ -130,7 +130,7 @@ li.service:hover .service-card {
 /* ── Bookmarks ───────────────────────────────────────────
    Card background treatment for Documentation / Project groups.
    ─────────────────────────────────────────────────────── */
-.bookmarks-group {
+.bookmark-group {
   background-color: rgba(26, 17, 11, 0.90) !important;
   border-top:    1px solid rgba(255, 240, 220, 0.07) !important;
   border-right:  1px solid rgba(255, 240, 220, 0.07) !important;

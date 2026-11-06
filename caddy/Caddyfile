@@ -36,6 +36,8 @@
 # ---------------------------------------------------------------------------
 :80 {
 	import security_headers
+	# Caddy's own healthcheck target (stacks/caddy.yaml) — independent of Homepage
+	respond /caddy-health 200
 	reverse_proxy homepage:3000
 }
 

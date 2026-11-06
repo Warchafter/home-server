@@ -12,6 +12,14 @@ global:
   scrape_interval: 30s
   evaluation_interval: 30s
 
+# Retention (Prometheus 3.10+; replaces --storage.tsdb.retention.time).
+# Whichever limit is hit first wins.
+storage:
+  tsdb:
+    retention:
+      time: 30d
+      size: 10GB
+
 scrape_configs:
   # Prometheus's own metrics
   - job_name: 'prometheus'

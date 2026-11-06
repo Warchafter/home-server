@@ -7,15 +7,19 @@
 #
 # Not directly user-facing — access metrics through Grafana at :8100.
 #
-# DATA RETENTION: 30 days by default. Adjust --storage.tsdb.retention.time
-# if you need more history (increases disk usage).
+# DATA RETENTION: 30 days or 10 GB, whichever comes first — set in
+# prometheus/prometheus.yml (storage.tsdb.retention; the CLI flag is
+# deprecated in 3.x). The size cap keeps metrics from helping fill the disk.
+#
+# UPGRADED 2.53 -> 3.x: the TSDB is now only readable by 2.55+. Roll back to
+# v2.55.1, not v2.53.5, or restore prometheus_data from backup.
 #
 # SCRAPE CONFIG: See prometheus/prometheus.yml for targets and intervals.
 # =============================================================================
 
 services:
   prometheus:
-    image: prom/prometheus:v2.53.5
+    image: prom/prometheus:v3.16.0
     container_name: prometheus
     restart: unless-stopped
     security_opt:
@@ -25,7 +29,6 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus

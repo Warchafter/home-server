@@ -13,7 +13,7 @@
 
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:v0.10.9
+    image: ghcr.io/gethomepage/homepage:v2.7.0
     container_name: homepage
     restart: unless-stopped
     security_opt:
@@ -25,11 +25,20 @@ services:
       - /tmp
       - /run
     environment:
-      # Which hostnames/IPs are allowed to access the dashboard.
-      # Without this, Homepage rejects requests as a security measure.
-      # Uses wildcard by default since this is behind a LAN/Tailscale.
-      # Restrict to LAN (192.168.0.x) + Tailscale CGNAT range (100.64.0.0/10)
-      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-192.168.0.0/24,100.64.0.0/10}
+      # Host-header allowlist (v1+ enforces it). Exact host[:port] strings,
+      # comma-separated — NOT CIDR ranges. Caddy's :80 block passes the
+      # browser's Host through, so list every name/IP you type in the address
+      # bar: LAN IP, Tailscale IP, MagicDNS name.
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-${SERVER_IP},${TAILSCALE_IP:-127.0.0.1}}
+      # Optional login gate (v2+). Covers the dashboard AND every /api route,
+      # including the widget proxy that otherwise serves arr queues, torrent
+      # and library data to anyone on the LAN/tailnet. HOMEPAGE_EXTERNAL_URL is
+      # a single URL that login redirects to, so use a name that resolves both
+      # at home and away (the MagicDNS name). See docs/security-hardening.md.
+      - HOMEPAGE_AUTH_ENABLED=${HOMEPAGE_AUTH_ENABLED:-false}
+      - HOMEPAGE_AUTH_SECRET=${HOMEPAGE_AUTH_SECRET:-}
+      - HOMEPAGE_AUTH_PASSWORD=${HOMEPAGE_AUTH_PASSWORD:-}
+      - HOMEPAGE_EXTERNAL_URL=${HOMEPAGE_EXTERNAL_URL:-}
       # Passed to config files as {{HOMEPAGE_VAR_SERVER_IP}}
       - HOMEPAGE_VAR_SERVER_IP=${SERVER_IP:-localhost}
       # AdGuard credentials for widget (set after completing AdGuard wizard)
@@ -58,7 +67,7 @@ services:
     networks:
       - proxy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000 || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000/api/healthcheck || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 15s
