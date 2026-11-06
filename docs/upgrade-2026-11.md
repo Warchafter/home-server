@@ -53,7 +53,7 @@ in wave 1, the rest in wave 3. Each container is stopped for its copy, so its da
 consistent. `--volumes-from` copies whatever the volume is actually named:
 ```bash
 sudo install -d -m 700 /srv/pre-upgrade-2026-11   # holds tokens/keys/DBs: root-only
-docker compose stop autoheal          # don't let it "heal" the stopped containers
+docker stop autoheal                  # don't let it "heal" the stopped containers
 snap() {  # <container> <path inside it> [tar options]
   docker stop "$1" &&
   docker run --rm --volumes-from "$1":ro -v /srv/pre-upgrade-2026-11:/b alpine tar czf "/b/$1.tgz" $3 "$2"
@@ -65,8 +65,8 @@ snap syncthing     /var/syncthing
 snap grafana       /var/lib/grafana
 snap homeassistant /config
 snap jellyfin      /config "--exclude=config/metadata"   # artwork re-downloads
-docker compose start autoheal
-ls -lh /srv/pre-upgrade-2026-11
+docker start autoheal                 # plain docker: compose would refuse, autoheal-proxy doesn't exist until 1b
+sudo ls -lh /srv/pre-upgrade-2026-11
 ```
 
 ## Wave 1 — low-risk, no one-way migrations
