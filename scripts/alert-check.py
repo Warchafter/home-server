@@ -52,6 +52,9 @@ MOUNTS = ["/"]
 STUCK_MINUTES = 5
 REMIND_HOURS = 24
 DEFAULT_DISK_THRESHOLD = 85
+PATCH_GRACE_DAYS = 3
+REBOOT_REQUIRED = Path("/var/run/reboot-required")
+APT_CHECK = "/usr/lib/update-notifier/apt-check"
 
 _UP_RE = re.compile(r"^Up (?:(About a|About an|Less than a|\d+) )?(second|minute|hour|day|week|month|year)s?", re.I)
 _UNIT_MIN = {"second": 1 / 60, "minute": 1, "hour": 60, "day": 1440, "week": 10080, "month": 43200, "year": 525600}
@@ -134,6 +137,29 @@ def check_containers() -> dict:
     return problems
 
 
+def check_patches() -> dict:
+    problems = {}
+    try:
+        age_days = (time.time() - REBOOT_REQUIRED.stat().st_mtime) / 86400
+    except OSError:
+        age_days = None
+    if age_days is not None and age_days >= PATCH_GRACE_DAYS:
+        problems["host:reboot"] = f"reboot required for {age_days:.0f} days (sudo reboot to load patched kernel/libs)"
+    if os.path.exists(APT_CHECK):
+        try:
+            # apt-check prints "<upgradable>;<security>" on stderr
+            err = subprocess.run([APT_CHECK], capture_output=True, text=True, timeout=120).stderr.strip()
+            security = int(err.split(";")[1])
+        except (subprocess.SubprocessError, OSError, ValueError, IndexError):
+            security = 0
+        if security:
+            problems["host:security-updates"] = (
+                f"{security} security update(s) pending — unattended-upgrades not running? "
+                "(sudo apt update && sudo apt upgrade)"
+            )
+    return problems
+
+
 # ---------------------------------------------------------------------------
 # Delivery
 # ---------------------------------------------------------------------------
@@ -197,6 +223,7 @@ def main() -> int:
     problems = {}
     problems.update(check_disk(threshold))
     problems.update(check_containers())
+    problems.update(check_patches())
 
     if args.print:
         print("\n".join(problems.values()) if problems else "no problems")

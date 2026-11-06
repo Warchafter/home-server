@@ -1,0 +1,27 @@
+// /etc/apt/apt.conf.d/52unattended-upgrades-local
+// Daily security updates on the home server. Installs Ubuntu security
+// pocket updates only (the distro default origins), never reboots on its own —
+// scripts/alert-check.py reports when a reboot has been pending for 3+ days.
+//
+// Install (see docs/security-hardening.md):
+//   sudo apt install unattended-upgrades
+//   sudo install -m 0644 host/apt/52unattended-upgrades-local /etc/apt/apt.conf.d/
+//   sudo unattended-upgrade --dry-run --debug | tail
+
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
+
+// Docker CE and Tailscale come from third-party repos; keep them on manual
+// upgrades so a container runtime restart never happens unattended.
+Unattended-Upgrade::Package-Blacklist {
+    "docker-ce";
+    "docker-ce-cli";
+    "containerd.io";
+    "docker-compose-plugin";
+    "tailscale";
+};
+
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Automatic-Reboot "false";
