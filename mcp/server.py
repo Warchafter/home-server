@@ -9,6 +9,9 @@ health/queue/library views via their APIs. Consumed by Claude Code (dev
 laptop) and Odysseus (local LLM workspace) over the LAN / Tailscale, routed
 through Caddy at :8105.
 
+Optional bearer-token auth (MCP_AUTH_TOKEN, see auth.py); /health stays open
+for the Docker healthcheck.
+
 Deliberately READ-ONLY: no restart/exec/write tools. Docker access goes
 through dockerproxy, which blocks all POST endpoints (POST=0); app clients
 only GET (qBittorrent needs one POST to log in); /media is mounted ro.
@@ -40,4 +43,17 @@ async def health(_request: Request) -> PlainTextResponse:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    import logging
+    import os
+
+    import uvicorn
+
+    from auth import BearerAuth
+
+    app = mcp.streamable_http_app()
+    token = os.environ.get("MCP_AUTH_TOKEN", "")
+    if token:
+        app = BearerAuth(app, token)
+    else:
+        logging.warning("MCP_AUTH_TOKEN is not set: /mcp is open to anyone on the LAN/tailnet")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

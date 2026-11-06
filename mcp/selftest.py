@@ -142,5 +142,30 @@ check("queue record", qr["for"] == "Movie" and qr["tracked"] == "warning/importB
 t = apps._torrent({"name": "n", "state": "missingFiles", "progress": 1, "size": 1e9, "ratio": 1.234, "eta": 8640000, "added_on": 1700000000})
 check("torrent shaping", t["progress"] == 100 and t["ratio"] == 1.23 and t["eta_min"] is None and t["added"] == "2023-11-14T22:13:20Z", json.dumps(t))
 
+# auth: bearer gate on /mcp, /health always open, non-http scopes pass through
+import auth  # noqa: E402
+
+
+async def _probe(path, headers=(), scope_type="http"):
+    seen, sent = [], []
+
+    async def inner(scope, receive, send):
+        seen.append(scope["type"])
+
+    async def send(msg):
+        sent.append(msg)
+
+    gate = auth.BearerAuth(inner, "s3cret")
+    await gate({"type": scope_type, "path": path, "headers": list(headers)}, None, send)
+    status = sent[0]["status"] if sent else None
+    return bool(seen), status
+
+check("auth: no token -> 401", asyncio.run(_probe("/mcp")) == (False, 401))
+check("auth: wrong token -> 401", asyncio.run(_probe("/mcp", [(b"authorization", b"Bearer nope")])) == (False, 401))
+check("auth: basic scheme rejected", asyncio.run(_probe("/mcp", [(b"authorization", b"Basic s3cret")])) == (False, 401))
+check("auth: right token passes", asyncio.run(_probe("/mcp", [(b"Authorization", b"Bearer s3cret")])) == (True, None))
+check("auth: /health open", asyncio.run(_probe("/health")) == (True, None))
+check("auth: lifespan passes", asyncio.run(_probe("", scope_type="lifespan")) == (True, None))
+
 print(f"\n{'ALL OK' if not fails else f'{fails} FAILED'}")
 sys.exit(1 if fails else 0)
