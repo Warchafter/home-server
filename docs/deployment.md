@@ -112,7 +112,11 @@ volume and keeping the last 30 days. Check backup status:
 docker compose logs vaultwarden-backup
 ```
 
-**Everything else (manual):** Back up these critical items regularly:
+**Everything else (automated): Backrest → Backblaze B2.** Encrypted daily
+snapshots of all Docker volumes, the repo + `.env`, Syncthing data and the
+book/comic library. Setup, excludes and restore steps: `docs/backups.md`.
+
+**Manual fallback** (e.g. before a risky upgrade):
 - This Git repo (it's your entire server config)
 - The `.env` file (not in git — copy it somewhere safe)
 - Docker volumes (Phase 1): `adguard_conf`, `adguard_work`, `uptime_kuma_data`, `caddy_data`, `caddy_config`

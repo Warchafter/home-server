@@ -1,15 +1,18 @@
 # Home Server
 
-Config-as-code for a personal home server running Docker Compose on an HP SFF desktop.
+Config-as-code for a personal home server running Docker Compose on an HP EliteDesk 705 G4 DM.
 
 ## Architecture
 
 ```
 HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 ├── Tailscale (host-level VPN — not a container)
-├── Docker Engine + Compose v2 (22 containers)
-│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8105)
-│   ├── Docker Proxy     ─ secure Docker socket proxy for Homepage
+├── Docker Engine + Compose v2 (31 containers)
+│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8108)
+│   ├── Docker Proxy     ─ read-only Docker API proxy (Homepage, MCP, Diun)
+│   ├── Autoheal         ─ restarts unhealthy containers (via restart-only proxy)
+│   ├── Diun             ─ notifies on new image versions (never auto-updates)
+│   ├── Backrest         ─ encrypted restic backups to Backblaze B2 (via Caddy :8106)
 │   ├── AdGuard Home     ─ DNS + ad blocking (port 53)
 │   ├── Uptime Kuma      ─ uptime monitoring (via Caddy :8090)
 │   ├── Homepage         ─ dashboard (via Caddy :80)
@@ -19,6 +22,10 @@ HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 │   ├── Sonarr           ─ TV show management (via Caddy :8094)
 │   ├── Radarr           ─ movie management (via Caddy :8095)
 │   ├── Prowlarr         ─ indexer manager (via Caddy :8096)
+│   ├── Bazarr           ─ subtitles (via Caddy :8104)
+│   ├── FlareSolverr     ─ Cloudflare challenge solver for Prowlarr (internal)
+│   ├── Seerr            ─ media request portal (via Caddy :8108)
+│   ├── Cleanuparr       ─ stalled-download / seeding cleanup (via Caddy :8107)
 │   ├── Gluetun          ─ VPN tunnel (ProtonVPN, for qBittorrent)
 │   ├── qBittorrent      ─ download client (via Caddy :8097, VPN-routed)
 │   ├── Home Assistant   ─ smart home automation (via Caddy :8098)
@@ -29,7 +36,8 @@ HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 │   ├── cAdvisor         ─ container metrics (internal)
 │   ├── Kavita           ─ comics/manga reader (via Caddy :8101)
 │   ├── Calibre-Web      ─ ebook server (via Caddy :8102)
-│   └── Profilarr        ─ TRaSH profile sync (via Caddy :8103)
+│   ├── Profilarr        ─ TRaSH profile sync (via Caddy :8103)
+│   └── MCP              ─ read-only AI tool server, bearer token (via Caddy :8105)
 ```
 
 ## Quick Start
@@ -79,7 +87,11 @@ Then open `http://<SERVER_IP>` for the dashboard.
 | Calibre-Web | `http://SERVER_IP:8102` | Ebook library server |
 | Profilarr | `http://SERVER_IP:8103` | TRaSH profile sync for Sonarr/Radarr |
 | Bazarr | `http://SERVER_IP:8104` | Automatic subtitle management |
-| MCP | `http://SERVER_IP:8105/mcp` | Read-only AI tool server (Claude Code / Odysseus) |
+| MCP | `http://SERVER_IP:8105/mcp` | Read-only AI tool server (Claude Code / Odysseus), bearer token |
+| Backrest | `http://SERVER_IP:8106` | Encrypted offsite backups (restic → Backblaze B2) |
+| Cleanuparr | `http://SERVER_IP:8107` | Cleans stalled downloads, enforces seeding limits |
+| Seerr | `http://SERVER_IP:8108` | Request movies/shows (Jellyfin login) |
+| Diun | — (notifications only) | New image version alerts to Discord/Telegram |
 | Tailscale | Host-level | Secure remote access from anywhere via VPN |
 
 ## Project Structure
@@ -109,7 +121,17 @@ Then open `http://<SERVER_IP>` for the dashboard.
 │   ├── cadvisor.yaml
 │   ├── kavita.yaml
 │   ├── calibre-web.yaml
-│   └── profilarr.yaml
+│   ├── profilarr.yaml
+│   ├── bazarr.yaml, flaresolverr.yaml, mcp.yaml
+│   ├── autoheal.yaml          # + restart-only socket proxy
+│   ├── diun.yaml              # Phase 4
+│   ├── backrest.yaml
+│   ├── seerr.yaml
+│   └── cleanuparr.yaml
+├── autoheal/haproxy.cfg       # Docker API allowlist for autoheal
+├── diun/diun.yml              # Image update notifier config
+├── host/                      # Host-level config (sshd drop-in, unattended-upgrades)
+├── mcp/                       # Read-only MCP server source
 ├── caddy/
 │   └── Caddyfile              # Reverse proxy rules
 ├── prometheus/
@@ -117,7 +139,10 @@ Then open `http://<SERVER_IP>` for the dashboard.
 ├── grafana/provisioning/      # Auto-configured data sources
 ├── homepage/config/           # Dashboard configuration
 ├── scripts/
-│   └── setup.sh               # Bootstrap script for fresh server
+│   ├── setup.sh               # Bootstrap script for fresh server
+│   ├── alert-check.py         # Host cron watchdog: disk, crash loops, patches
+│   ├── health-report.py
+│   └── jellyfin-prune-stale-userdata.py
 └── docs/                      # Guides and reference
 ```
 
@@ -126,12 +151,23 @@ Then open `http://<SERVER_IP>` for the dashboard.
 - **Phase 1** (complete): Foundation — Caddy, AdGuard, Tailscale, Uptime Kuma, Homepage
 - **Phase 2** (complete): Core services — Vaultwarden, Jellyfin, *arr stack, Home Assistant, Syncthing
 - **Phase 3** (complete): Monitoring & reading — Prometheus/Grafana, Kavita, Calibre-Web, Profilarr
-- **Phase 4**: External independence + cloud
-  - **Nextcloud** — self-hosted cloud storage (replace Google Drive / iCloud)
-  - **WireGuard** — traditional VPN gateway for non-Tailscale clients
-  - **Headscale** — self-hosted Tailscale control server (eliminate tailscale.com dependency)
-  - **Unbound** — recursive DNS resolver (eliminate upstream DNS dependency on 1.1.1.1/8.8.8.8)
-  - **SearXNG** — self-hosted meta-search engine (replace Google search widget)
-  - **Syncthing discosrv + relaysrv** — self-hosted discovery/relay (eliminate syncthing.net dependency)
-  - **Gitea/Forgejo** — self-hosted git for TRaSH Guides mirror (eliminate Profilarr's GitHub dependency)
-  - **Local registry cache** — pull-through cache for Docker Hub/ghcr.io (eliminate registry dependency on fresh deploys)
+- **Phase 4** (in progress, Nov 2026): Resilience, security & privacy — see `docs/upgrade-2026-11.md`
+  - Encrypted offsite backups (Backrest → B2) — `docs/backups.md`
+  - Image update notifications (Diun; Watchtower was archived Dec 2025)
+  - Download hygiene (Cleanuparr) and requests (Seerr, the Overseerr/Jellyseerr merger)
+  - Autoheal behind a restart-only Docker API proxy; MCP bearer-token auth
+  - Host & tailnet hardening — `docs/security-hardening.md`: key-only SSH,
+    unattended security updates, Tailscale ACLs / device approval / key expiry,
+    Vaultwarden on a real cert via Tailscale Serve, encrypted DNS upstreams,
+    Syncthing without public discovery/relays, telemetry off
+  - Tailscale exit node (replaces the WireGuard/wg-easy plan)
+- **Next**
+  - 2.5" SATA drive for media + a local restic repository (3-2-1)
+  - Immich (photos) once the SATA drive is in
+  - Pocket ID + Tinyauth (passkey SSO) once there is a domain with HTTPS
+  - Public domain + Caddy TLS (`docs/adding-a-domain.md`), then ntfy if Discord/Telegram stop being enough
+- **Only if needed:** Navidrome + Lidarr (music), Mosquitto + Zigbee2MQTT (after buying a coordinator),
+  SearXNG, Bookshelf/LazyLibrarian (Readarr is retired), OpenCloud (file sharing beyond Syncthing)
+- **Dropped:** Headscale (Tailnet Lock covers the trust concern), self-hosted Syncthing discovery/relays
+  (Tailscale addresses instead), Forgejo TRaSH mirror, registry pull-through cache, Unbound
+  (encrypted upstream DNS is the better privacy trade), WireGuard (exit node)
