@@ -10,6 +10,20 @@
 # Without autoheal, Docker Compose only restarts containers when the main
 # process exits — it does NOT restart containers that are merely "unhealthy".
 #
+# DOCKER API ACCESS: autoheal never sees the Docker socket. A ":ro" socket
+# mount does not limit the Docker API (it is root on the host), so autoheal
+# talks to its own proxy instead (autoheal/haproxy.cfg), which allows exactly
+# GET /containers/json and POST /containers/<id>/restart. The stock
+# docker-socket-proxy env flags can't express that: restarts need POST=1,
+# which together with CONTAINERS=1 would also allow POST /containers/create.
+#
+# The proxy serves a unix socket in a shared volume (autoheal 1.2.0 treats
+# tcp:// as TLS-with-client-certs), and both containers run with
+# network_mode: none — no network at all. The general dockerproxy stays POST=0.
+#
+# MIGRATIONS: stop autoheal before an upgrade that runs a long one-way
+# migration (Uptime Kuma 1->2, Syncthing 1->2, Jellyfin 10->12):
+#   docker compose stop autoheal   ...   docker compose start autoheal
 # =============================================================================
 
 services:
@@ -22,6 +36,8 @@ services:
     cap_drop:
       - ALL
     environment:
+      # Docker API via the restart-only proxy below
+      - DOCKER_SOCK=/run/autoheal/docker.sock
       # Monitor all containers with healthchecks (not just labeled ones)
       - AUTOHEAL_CONTAINER_LABEL=all
       # Check every 30 seconds for unhealthy containers
@@ -30,11 +46,50 @@ services:
       - AUTOHEAL_START_PERIOD=0
       # Use the default restart timeout
       - AUTOHEAL_DEFAULT_STOP_TIMEOUT=10
+    depends_on:
+      autoheal-proxy:
+        condition: service_healthy
+    network_mode: none
     volumes:
-      # Read-only Docker socket access to monitor and restart containers
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - autoheal_sock:/run/autoheal
     deploy:
       resources:
         limits:
           cpus: "0.10"
           memory: 32m
+
+  autoheal-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    container_name: autoheal-proxy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    environment:
+      # Listen on a unix socket only (the allowlist lives in haproxy.cfg)
+      - BIND_CONFIG=/run/autoheal/docker.sock mode 600
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../autoheal/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg.template:ro
+      - autoheal_sock:/run/autoheal
+    network_mode: none
+    healthcheck:
+      test: ["CMD-SHELL", "[ -S /run/autoheal/docker.sock ]"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 64m
+
+volumes:
+  autoheal_sock:
+    name: autoheal_sock
