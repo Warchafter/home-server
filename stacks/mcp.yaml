@@ -36,6 +36,8 @@ services:
     build: ../mcp
     container_name: mcp
     restart: unless-stopped
+    labels:
+      - "diun.enable=false"   # locally built; no registry to watch
     security_opt:
       - no-new-privileges:true
     cap_drop:

@@ -1,0 +1,69 @@
+# =============================================================================
+# Seerr - Media Request Portal
+# =============================================================================
+# Netflix-style "request a movie/show" UI that hands requests to Sonarr and
+# Radarr. Seerr is the 2026 merger of Overseerr and Jellyseerr (the planned
+# Jellyseerr). Users sign in with their Jellyfin account.
+#
+# FIRST RUN (/setup is unauthenticated until finished — do it right away):
+#   1. Choose Jellyfin, URL http://jellyfin:8096, sign in as a Jellyfin admin
+#      (that account becomes the Seerr owner)
+#   2. Pick libraries, run a scan, then add Sonarr (http://sonarr:8989) and
+#      Radarr (http://radarr:7878) with their API keys
+#   3. Settings > Network: enable "Proxy Support" (behind Caddy). Leave
+#      "CSRF Protection" OFF — it requires HTTPS and would lock out HTTP.
+#
+# Runs as the image's node user (UID 1000), no capabilities. A fresh named
+# volume is root-owned — chown it once before first start
+# (docs/upgrade-2026-11.md).
+#
+# Access at: http://SERVER_IP:8108 (routed through Caddy)
+# =============================================================================
+
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:v3.5.1
+    container_name: seerr
+    init: true                 # PID 1 is npm; tini reaps and forwards signals
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Not documented upstream; if it crash-loops with EROFS in the logs,
+    # remove read_only.
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+    environment:
+      - TZ=${TZ:-UTC}
+      - LOG_LEVEL=info          # image default is debug
+      - PORT=5055
+      - NPM_CONFIG_CACHE=/tmp/.npm
+    volumes:
+      - seerr_config:/app/config
+    dns:
+      - ${CONTAINER_DNS:-1.0.0.1}
+      - 1.1.1.1
+    networks:
+      - proxy
+    healthcheck:
+      # /api/v1/status would call the GitHub API on every probe
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5055/api/v1/settings/public || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512m
+
+volumes:
+  seerr_config:
+    name: seerr_config
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,70 @@
+# =============================================================================
+# Diun - Docker Image Update Notifier
+# =============================================================================
+# Replaces the Watchtower idea (Watchtower was archived 2025-12-17). Diun only
+# NOTIFIES when new version tags appear for the images we run — it never
+# pulls or restarts anything, which keeps the pinned-version workflow:
+# read the changelog, bump the tag in stacks/*.yaml, commit, deploy.
+#
+# Config: diun/diun.yml. Docker access: the read-only dockerproxy (POST=0).
+# No UI, no published port; its gRPC control API is bound to localhost.
+#
+# Notifications: set DIUN_NOTIF_DISCORD_WEBHOOKURL and/or the
+# DIUN_NOTIF_TELEGRAM_* values in .env (same values as the ALERT_* ones are
+# fine). Variables left unset in .env are not passed to the container, so an
+# unused channel stays disabled. Test with:
+#   docker compose exec diun diun notif test
+# =============================================================================
+
+services:
+  diun:
+    image: crazymax/diun:4.33.1
+    container_name: diun
+    hostname: diun             # shown as the sender in notifications
+    command: serve
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      - TZ=${TZ:-UTC}
+      - LOG_LEVEL=info
+      - CONFIG=/etc/diun/diun.yml
+      # gRPC API (image prune, notif test) is unauthenticated: localhost only
+      - GRPC_AUTHORITY=127.0.0.1:42286
+      # Pass-through: only set in the container if defined in .env
+      - DIUN_NOTIF_DISCORD_WEBHOOKURL
+      - DIUN_NOTIF_TELEGRAM_TOKEN
+      - DIUN_NOTIF_TELEGRAM_CHATIDS
+    volumes:
+      - ../diun/diun.yml:/etc/diun/diun.yml:ro
+      # bbolt DB of tags already seen
+      - diun_data:/data
+    depends_on:
+      dockerproxy:
+        condition: service_healthy
+    networks:
+      - proxy        # reach dockerproxy + the registries
+    healthcheck:
+      test: ["CMD", "diun", "healthcheck"]
+      interval: 60s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128m
+
+volumes:
+  diun_data:
+    name: diun_data
+
+networks:
+  proxy:
+    external: true

@@ -37,6 +37,13 @@
         server: local
         container: vaultwarden
 
+    - Backrest:
+        icon: backrest.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8106"
+        description: Encrypted offsite backups
+        server: local
+        container: backrest
+
 - Media:
     - Jellyfin:
         icon: jellyfin.png
@@ -141,6 +148,20 @@
         description: TRaSH profile sync
         server: local
         container: profilarr
+
+    - Cleanuparr:
+        icon: cleanuparr.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8107"
+        description: Queue & seeding cleanup
+        server: local
+        container: cleanuparr
+
+    - Seerr:
+        icon: seerr.png
+        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8108"
+        description: Media requests
+        server: local
+        container: seerr
 
 - Smart Home:
     - Home Assistant:

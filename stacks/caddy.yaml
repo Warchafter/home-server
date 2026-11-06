@@ -42,6 +42,9 @@ services:
       - "8104:8104"       # Bazarr (subtitle management)
       # --- Phase 4 ---
       - "8105:8105"       # MCP (AI tool server, read-only)
+      - "8106:8106"       # Backrest (encrypted backups)
+      - "8107:8107"       # Cleanuparr (download cleanup)
+      - "8108:8108"       # Seerr (media requests)
       # - "443:443"       # HTTPS — uncomment when you add a domain
     volumes:
       # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/

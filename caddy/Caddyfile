@@ -192,6 +192,33 @@
 	reverse_proxy mcp:8000
 }
 
+# ---------------------------------------------------------------------------
+# Backrest — encrypted restic backups
+# Access at: http://SERVER_IP:8106
+# ---------------------------------------------------------------------------
+:8106 {
+	import security_headers
+	reverse_proxy backrest:9898
+}
+
+# ---------------------------------------------------------------------------
+# Cleanuparr — download queue / seeding cleanup
+# Access at: http://SERVER_IP:8107
+# ---------------------------------------------------------------------------
+:8107 {
+	import security_headers
+	reverse_proxy cleanuparr:11011
+}
+
+# ---------------------------------------------------------------------------
+# Seerr — media request portal
+# Access at: http://SERVER_IP:8108
+# ---------------------------------------------------------------------------
+:8108 {
+	import security_headers
+	reverse_proxy seerr:5055
+}
+
 # =============================================================================
 # DOMAIN MODE (uncomment when you have a domain)
 # See docs/adding-a-domain.md for step-by-step instructions.

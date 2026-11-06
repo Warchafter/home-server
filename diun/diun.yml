@@ -1,0 +1,50 @@
+# =============================================================================
+# Diun — image update notifier config (stacks/diun.yaml)
+# =============================================================================
+# Notifies when a NEW version tag appears for an image a container runs.
+# Never pulls or updates anything — bump the tag in stacks/*.yaml yourself.
+# Notifier secrets come from env (DIUN_NOTIF_*), not this file.
+#
+# Behaviour worth knowing:
+#   * watchRepo lists the repo's tags; any tag not seen before is "new".
+#     Diun does NOT check that the tag is newer than the one you run, so a
+#     backport (e.g. 10.11.12 while on 12.4) also notifies.
+#   * The first scan of a repo only records tags (firstCheckNotif: false).
+#   * includeTags is matched against the running tag too: a container whose
+#     tag fails the filter gets no notifications. Override per container with
+#     the label diun.include_tags (stacks/jellyfin.yaml does, for 12.4-style
+#     two-part tags).
+# =============================================================================
+
+db:
+  path: /data/diun.db
+
+watch:
+  workers: 4
+  # Daily; Docker Hub allows 100 anonymous manifest GETs per 6 h and the
+  # first scan costs about images x (1 + maxTags). A 429 retries next run.
+  schedule: "0 9 * * *"
+  jitter: 30s
+  firstCheckNotif: false
+  runOnStartup: true
+  compareDigest: true
+
+defaults:
+  watchRepo: true
+  # new tags only — linuxserver rebuilds pinned tags weekly, which would
+  # otherwise send "updated digest" noise
+  notifyOn:
+    - new
+  sortTags: semver
+  maxTags: 3
+  # stable x.y.z (optionally v-prefixed, optionally 4-part like Kavita's);
+  # skips latest, floating 2.1-style tags, -rc/-beta/-ls builds
+  includeTags:
+    - '^v?\d+\.\d+\.\d+(\.\d+)?$'
+
+providers:
+  docker:
+    # read-only socket proxy (stacks/dockerproxy.yaml: CONTAINERS=1 IMAGES=1 POST=0)
+    endpoint: tcp://dockerproxy:2375
+    watchByDefault: true
+    watchStopped: false

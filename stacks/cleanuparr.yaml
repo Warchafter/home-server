@@ -1,0 +1,77 @@
+# =============================================================================
+# Cleanuparr - Download Queue & Seeding Cleanup for the *arr Stack
+# =============================================================================
+# Keeps the download side from silently eating the disk (the 2026-07 and
+# 2026-10 disk-full incidents):
+#   * Queue Cleaner    — strikes, then removes + blocklists stalled,
+#                        metadata-stuck, failed-import and crawling downloads
+#   * Download Cleaner — per-category seeding limits (ratio / seed time),
+#                        and cleanup of "unlinked" downloads: torrents whose
+#                        files are no longer hardlinked into the library
+#                        (the orphans Sonarr/Radarr leave behind on delete)
+#   * Seeker           — re-searches missing / below-cutoff items, slowly
+#                        (replaces Huntarr, which leaked every connected app's
+#                        API keys in 2026-02 and was pulled by its author)
+#
+# Talks to qBittorrent at http://gluetun:8080 and Sonarr/Radarr by service
+# name. /media is mounted read-only at the same path qBittorrent uses, so
+# hardlink checks see the same files; deletions go through qBittorrent's API.
+#
+# FIRST RUN: the setup wizard (account + optional TOTP) is open until done —
+# complete it right after `docker compose up -d cleanuparr`. Leave
+# "Disable Auth for Local Addresses" OFF: its local ranges include
+# 172.16.0.0/12, so every request via Caddy would skip auth.
+#
+# Runs as 1000:1000 with no capabilities (the entrypoint skips its
+# useradd/chown/gosu path when not started as root). A fresh named volume is
+# root-owned — chown it once before first start (docs/upgrade-2026-11.md).
+#
+# Access at: http://SERVER_IP:8107 (routed through Caddy)
+# =============================================================================
+
+services:
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:2.10.12
+    container_name: cleanuparr
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Not documented upstream; if it crash-loops with EROFS / read-only file
+    # system in the logs, remove read_only and report what path it wanted.
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+    environment:
+      - TZ=${TZ:-UTC}
+      - PORT=11011
+      - UMASK=022
+    volumes:
+      - cleanuparr_config:/config
+      - ${MEDIA_PATH:-/srv/media}:/media:ro
+    dns:
+      - ${CONTAINER_DNS:-1.0.0.1}
+      - 1.1.1.1
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:11011/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512m
+
+volumes:
+  cleanuparr_config:
+    name: cleanuparr_config
+
+networks:
+  proxy:
+    external: true

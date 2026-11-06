@@ -35,6 +35,8 @@ include:
   - path: stacks/syncthing.yaml
   # --- Infrastructure ---
   - path: stacks/autoheal.yaml
+  - path: stacks/diun.yaml
+  - path: stacks/backrest.yaml
   # --- Phase 3: Advanced ---
   - path: stacks/prometheus.yaml
   - path: stacks/grafana.yaml
@@ -43,6 +45,8 @@ include:
   - path: stacks/kavita.yaml
   - path: stacks/calibre-web.yaml
   - path: stacks/profilarr.yaml
+  - path: stacks/seerr.yaml
+  - path: stacks/cleanuparr.yaml
   # --- Phase 4: AI Integration ---
   - path: stacks/mcp.yaml
 
