@@ -61,7 +61,11 @@ services:
       # App config, torrent state, resume data
       - qbittorrent_config:/config
       # Media root — must match the same mount in Sonarr/Radarr for hardlinks
-      - ${MEDIA_PATH:-/srv/media}:/media
+      # Downloads only, at the same /media/downloads path the arrs see.
+      # qBittorrent parses the most untrusted input on the box (peers, torrent
+      # metadata); it never needs the library. Sonarr/Radarr (full /media)
+      # create the hardlinks — same filesystem, so they still work.
+      - ${MEDIA_PATH:-/srv/media}/downloads:/media/downloads
     healthcheck:
       # Check both qBittorrent web UI AND Gluetun control server. The localhost
       # check alone always passes even when the network namespace is broken
@@ -75,6 +79,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "1.00"
           memory: 256m
 

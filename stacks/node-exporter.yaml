@@ -22,6 +22,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
     pid: host
     command:
       - '--path.procfs=/host/proc'
@@ -43,6 +46,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.25"
           memory: 64m
 

@@ -22,9 +22,11 @@
 #     --header "Authorization: Bearer $MCP_AUTH_TOKEN"
 #   Odysseus: Settings > MCP > add HTTP server with the same URL + header
 #
-# SECURITY: set MCP_AUTH_TOKEN in .env (openssl rand -hex 32). With it set,
-# every request except GET /health needs `Authorization: Bearer <token>`;
-# without it the endpoint is open to the LAN/tailnet and logs a warning.
+# SECURITY: MCP_AUTH_TOKEN in .env is required (openssl rand -hex 32); every
+# request except GET /health needs `Authorization: Bearer <token>`, and the
+# server refuses to start without one. Container names passed to the Docker
+# tools are validated (core.container_ref) so they can't reach other API
+# endpoints; dockerproxy's allowlist is the second layer.
 # Logs and app APIs reachable through these tools include torrent names,
 # library paths and container env-derived detail, so keep the token on.
 # Keep this service read-only — bearer auth is not a reason to add
@@ -48,8 +50,8 @@ services:
     environment:
       - DOCKER_PROXY_URL=http://dockerproxy:2375
       - PROMETHEUS_URL=http://prometheus:9090
-      # Bearer token for /mcp (blank = open, see SECURITY above)
-      - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
+      # Bearer token for /mcp — required (the server exits without one)
+      - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:?Set MCP_AUTH_TOKEN in .env (openssl rand -hex 32)}
       # App APIs — same keys Homepage uses. Leave blank to disable that tool.
       - SONARR_API_KEY=${SONARR_API_KEY:-}
       - RADARR_API_KEY=${RADARR_API_KEY:-}
@@ -66,8 +68,9 @@ services:
       # taking over the host's resolv.conf.
       - /run/systemd/resolve:/host/resolve:ro
     networks:
-      - proxy        # reach dockerproxy, the apps, and be reachable by Caddy
+      - proxy        # reach the apps, and be reachable by Caddy
       - monitoring   # reach Prometheus (internal-only network)
+      - dockerapi    # read-only Docker API
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 30s
@@ -77,11 +80,14 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.50"
           memory: 256m
 
 networks:
   proxy:
+    external: true
+  dockerapi:
     external: true
   monitoring:
     external: true

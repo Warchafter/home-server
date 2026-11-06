@@ -55,6 +55,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 64
           cpus: "0.10"
           memory: 32m
 
@@ -87,9 +88,17 @@ services:
     deploy:
       resources:
         limits:
+          pids: 128
           cpus: "0.10"
           memory: 64m
 
 volumes:
+  # tmpfs-backed: a restarted proxy can't leave a stale socket that passes the
+  # -S healthcheck, and the socket never exists on disk under
+  # /var/lib/docker/volumes (which Backrest mounts read-only).
   autoheal_sock:
     name: autoheal_sock
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=1m,mode=0700"

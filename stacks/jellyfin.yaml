@@ -85,6 +85,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 2048
           cpus: "2.00"
           memory: 6144m  # 4GB tmpfs (transcode cache) + 2GB Jellyfin process headroom
 

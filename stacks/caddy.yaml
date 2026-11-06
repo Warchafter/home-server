@@ -20,31 +20,36 @@ services:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp
     ports:
+      # 0.0.0.0 = all IPv4 interfaces (LAN + tailscale0), per the Security
+      # Context. Explicit, because an unprefixed "80:80" also publishes on
+      # [::], i.e. any global IPv6 address the ISP router might pass inbound.
       # --- Phase 1 ---
-      - "80:80"           # Homepage dashboard (landing page)
-      - "8090:8090"       # Uptime Kuma
-      - "8091:8091"       # AdGuard Home UI
+      - "0.0.0.0:80:80"           # Homepage dashboard (landing page)
+      - "0.0.0.0:8090:8090"       # Uptime Kuma
+      - "0.0.0.0:8091:8091"       # AdGuard Home UI
       # --- Phase 2 ---
       # Vaultwarden serves its own HTTPS (ROCKET_TLS) — not proxied through Caddy
-      - "8093:8093"       # Jellyfin (media server)
-      - "8094:8094"       # Sonarr (TV management)
-      - "8095:8095"       # Radarr (movie management)
-      - "8096:8096"       # Prowlarr (indexer manager)
-      - "8097:8097"       # qBittorrent (download client)
-      - "8098:8098"       # Home Assistant (smart home)
-      - "8099:8099"       # Syncthing (file sync)
+      - "0.0.0.0:8093:8093"       # Jellyfin (media server)
+      - "0.0.0.0:8094:8094"       # Sonarr (TV management)
+      - "0.0.0.0:8095:8095"       # Radarr (movie management)
+      - "0.0.0.0:8096:8096"       # Prowlarr (indexer manager)
+      - "0.0.0.0:8097:8097"       # qBittorrent (download client)
+      - "0.0.0.0:8098:8098"       # Home Assistant (smart home)
+      - "0.0.0.0:8099:8099"       # Syncthing (file sync)
       # --- Phase 3 ---
-      - "8100:8100"       # Grafana (metrics dashboards)
-      - "8101:8101"       # Kavita (comics/manga reader)
-      - "8102:8102"       # Calibre-Web (ebook server)
-      - "8103:8103"       # Profilarr (arr profile sync)
-      - "8104:8104"       # Bazarr (subtitle management)
+      - "0.0.0.0:8100:8100"       # Grafana (metrics dashboards)
+      - "0.0.0.0:8101:8101"       # Kavita (comics/manga reader)
+      - "0.0.0.0:8102:8102"       # Calibre-Web (ebook server)
+      - "0.0.0.0:8103:8103"       # Profilarr (arr profile sync)
+      - "0.0.0.0:8104:8104"       # Bazarr (subtitle management)
       # --- Phase 4 ---
-      - "8105:8105"       # MCP (AI tool server, read-only)
-      - "8106:8106"       # Backrest (encrypted backups)
-      - "8107:8107"       # Cleanuparr (download cleanup)
-      - "8108:8108"       # Seerr (media requests)
+      - "0.0.0.0:8105:8105"       # MCP (AI tool server, read-only)
+      - "0.0.0.0:8107:8107"       # Cleanuparr (download cleanup)
+      - "0.0.0.0:8108:8108"       # Seerr (media requests)
       # - "443:443"       # HTTPS — uncomment when you add a domain
     volumes:
       # Path is relative to THIS file (stacks/), so ../caddy/ = repo root caddy/
@@ -69,6 +74,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.25"
           memory: 128m
 

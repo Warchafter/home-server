@@ -2,10 +2,9 @@
 Bearer-token gate for the MCP endpoint.
 
 Pure ASGI middleware (no Starlette dependency) so it wraps the FastMCP app
-without buffering the streamable-HTTP/SSE responses. When MCP_AUTH_TOKEN is
-unset the app is served as before (open on LAN/Tailscale) and a warning is
-logged at startup; when set, every HTTP request except GET /health must carry
-`Authorization: Bearer <token>`.
+without buffering the streamable-HTTP/SSE responses. Every HTTP request except
+GET /health must carry `Authorization: Bearer <token>`; server.py refuses to
+start without a token.
 """
 
 import hmac

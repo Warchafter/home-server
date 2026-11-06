@@ -57,6 +57,19 @@ include:
 #             reverse-proxy to them by container name. Docker's built-in DNS
 #             resolves names automatically on user-defined bridge networks.
 #
+# dockerapi:  internal-only network for the read-only Docker API proxy and
+#             its three clients. The proxy can inspect any container (Env
+#             included), so nothing else may reach it.
+#
+# scrapers:   FlareSolverr's sandbox-less Chromium renders attacker-chosen
+#             pages; only Prowlarr can talk to it.
+#
+# vault:      Vaultwarden on its own (Caddy doesn't route it; its port is
+#             published directly).
+#
+# backups:    Backrest on its own — its UI is root-equivalent, published on
+#             127.0.0.1 only and reached via Tailscale Serve / SSH tunnel.
+#
 # monitoring: Isolated network for Prometheus, Node Exporter, cAdvisor, and
 #             Grafana. Keeps host metrics (CPU, RAM, disk, processes) away
 #             from application containers. Grafana is on BOTH networks —
@@ -70,3 +83,16 @@ networks:
   monitoring:
     name: monitoring
     driver: bridge
+  dockerapi:
+    name: dockerapi
+    driver: bridge
+    internal: true   # no egress; only dockerproxy + its clients (homepage, diun, mcp)
+  scrapers:
+    name: scrapers
+    driver: bridge   # FlareSolverr + Prowlarr only; keeps the browser off `proxy`
+  vault:
+    name: vault
+    driver: bridge   # Vaultwarden alone: egress for icons/push, no app neighbours
+  backups:
+    name: backups
+    driver: bridge   # Backrest alone: egress to B2; its UI is loopback-only

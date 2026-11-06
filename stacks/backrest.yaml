@@ -13,20 +13,25 @@
 #
 # READ-ONLY SOURCES: everything is mounted :ro under /userdata. Backrest runs
 # as root (the image has no PUID) with every capability dropped except
-# DAC_READ_SEARCH, which lets it read files owned by any container UID but
-# not write them. Restore to /restore (a writable scratch volume) and copy
-# back by hand; in-place restores would need more caps on purpose.
+# DAC_OVERRIDE, so it can read files owned by any container UID; the :ro
+# mounts stop it writing them. NOT DAC_READ_SEARCH: that one also unlocks
+# open_by_handle_at, which with any host bind mount can open arbitrary
+# inodes on the host filesystem ("shocker") — /etc/shadow, SSH and Tailscale
+# keys. Restore to /restore (a writable scratch volume) and copy back by hand.
 #
 # CONSISTENCY: live SQLite files are copied as-is. The apps' own backups are
 # included and are the consistent copies to restore first: Vaultwarden's daily
 # dump (vaultwarden_backup volume), Sonarr/Radarr/Prowlarr's weekly zips
 # (config/Backups), Home Assistant's backups. Schedule the plan for ~03:00.
 #
-# FIRST RUN: the UI is open until the first-run setup sets a username and
-# password — do it immediately after `docker compose up -d backrest`.
-# Setup walkthrough: docs/backups.md
-#
-# Access at: http://SERVER_IP:8106 (routed through Caddy)
+# ACCESS: the UI is root-equivalent (it reads every volume and .env, restores,
+# and runs shell hooks as root), so it is NOT routed through Caddy and NOT on
+# the shared proxy network. It listens on the host's 127.0.0.1:9898 only:
+#   - remotely: Tailscale Serve, https://<machine>.<tailnet>.ts.net:8443
+#     (sudo tailscale serve --bg --https=8443 http://127.0.0.1:9898)
+#   - or an SSH tunnel: ssh -L 9898:127.0.0.1:9898 wachacha@SERVER_IP
+# FIRST RUN: set a username + long password immediately; never tick
+# "Disable authentication". Walkthrough: docs/backups.md
 # =============================================================================
 
 services:
@@ -40,7 +45,7 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      - DAC_READ_SEARCH        # read (never write) files of any owner
+      - DAC_OVERRIDE           # read files of any owner (sources are :ro)
     read_only: true
     tmpfs:
       - /tmp:size=512m
@@ -62,8 +67,10 @@ services:
       - ${SYNCTHING_DATA_PATH:-/srv/syncthing}:/userdata/syncthing:ro
       - ${MEDIA_PATH:-/srv/media}/books:/userdata/books:ro
       - ${MEDIA_PATH:-/srv/media}/comics:/userdata/comics:ro
+    ports:
+      - "127.0.0.1:9898:9898"  # host loopback only — see ACCESS above
     networks:
-      - proxy
+      - backups      # own network: egress to B2, no other container can reach it
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:9898/"]
       interval: 30s
@@ -73,6 +80,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "1.00"
           memory: 1g
 
@@ -87,5 +95,5 @@ volumes:
     name: backrest_restore
 
 networks:
-  proxy:
+  backups:
     external: true

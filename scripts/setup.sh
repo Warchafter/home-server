@@ -358,6 +358,9 @@ setup_env() {
 
     info "Creating .env from template..."
     cp "$REPO_DIR/.env.example" "$REPO_DIR/.env"
+    # Secrets live here; node-exporter mounts / read-only as nobody, so a
+    # world-readable .env would be readable from that container.
+    chmod 600 "$REPO_DIR/.env"
 
     # Replace placeholder values with detected ones
     sed -i "s/^SERVER_IP=.*/SERVER_IP=$DETECTED_IP/" "$REPO_DIR/.env"
@@ -455,6 +458,7 @@ generate_vaultwarden_cert() {
         -subj "/CN=Vaultwarden" \
         -addext "subjectAltName=IP:${server_ip},IP:127.0.0.1,DNS:localhost" \
         2>/dev/null
+    chmod 600 "$ssl_dir/key.pem"
 
     ok "Vaultwarden TLS certificate generated (valid 10 years, SAN: $server_ip)."
     info "Access Vaultwarden at: https://$server_ip:8092"

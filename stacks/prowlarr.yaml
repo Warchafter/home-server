@@ -48,6 +48,7 @@ services:
       - prowlarr_config:/config
     networks:
       - proxy
+      - scrapers     # reach FlareSolverr (http://flaresolverr:8191)
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9696/ping || exit 1"]
       interval: 30s
@@ -57,6 +58,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.50"
           memory: 384m
 
@@ -66,4 +68,6 @@ volumes:
 
 networks:
   proxy:
+    external: true
+  scrapers:
     external: true

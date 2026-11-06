@@ -26,6 +26,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -43,6 +46,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.50"
           memory: 1g
 

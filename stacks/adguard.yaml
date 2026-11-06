@@ -31,7 +31,9 @@ services:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
-      - NET_RAW
+      # NET_RAW removed: only AdGuard's DHCP server needs it, the router does
+      # DHCP here, and it would let a compromised AdGuard spoof ARP on proxy.
+      # If AdGuard ever logs "operation not permitted" on raw sockets, add it back.
       - CHOWN
       - DAC_OVERRIDE
       - FOWNER
@@ -58,6 +60,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.50"
           memory: 256m
 

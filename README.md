@@ -8,11 +8,11 @@ Config-as-code for a personal home server running Docker Compose on an HP EliteD
 HP Desktop (Linux) — AMD Ryzen 5 PRO 2400G, Radeon Vega 11 iGPU
 ├── Tailscale (host-level VPN — not a container)
 ├── Docker Engine + Compose v2 (31 containers)
-│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8108)
+│   ├── Caddy            ─ reverse proxy (ports 80, 8090-8108 except 8092/8106)
 │   ├── Docker Proxy     ─ read-only Docker API proxy (Homepage, MCP, Diun)
 │   ├── Autoheal         ─ restarts unhealthy containers (via restart-only proxy)
 │   ├── Diun             ─ notifies on new image versions (never auto-updates)
-│   ├── Backrest         ─ encrypted restic backups to Backblaze B2 (via Caddy :8106)
+│   ├── Backrest         ─ encrypted restic backups to Backblaze B2 (loopback + Tailscale Serve)
 │   ├── AdGuard Home     ─ DNS + ad blocking (port 53)
 │   ├── Uptime Kuma      ─ uptime monitoring (via Caddy :8090)
 │   ├── Homepage         ─ dashboard (via Caddy :80)
@@ -88,7 +88,7 @@ Then open `http://<SERVER_IP>` for the dashboard.
 | Profilarr | `http://SERVER_IP:8103` | TRaSH profile sync for Sonarr/Radarr |
 | Bazarr | `http://SERVER_IP:8104` | Automatic subtitle management |
 | MCP | `http://SERVER_IP:8105/mcp` | Read-only AI tool server (Claude Code / Odysseus), bearer token |
-| Backrest | `http://SERVER_IP:8106` | Encrypted offsite backups (restic → Backblaze B2) |
+| Backrest | `https://<machine>.<tailnet>.ts.net:8443` (Tailscale Serve) | Encrypted offsite backups (restic → Backblaze B2); UI is loopback-only |
 | Cleanuparr | `http://SERVER_IP:8107` | Cleans stalled downloads, enforces seeding limits |
 | Seerr | `http://SERVER_IP:8108` | Request movies/shows (Jellyfin login) |
 | Diun | — (notifications only) | New image version alerts to Discord/Telegram |

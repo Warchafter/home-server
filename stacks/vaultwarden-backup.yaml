@@ -12,11 +12,17 @@
 #   docker compose logs vaultwarden-backup   # Check backup runs
 #   docker exec vaultwarden-backup ls /bitwarden/backup  # List backup files
 #
-# RESTORE:
-#   1. Stop Vaultwarden: docker compose stop vaultwarden
-#   2. Run restore:
-#      docker exec -it vaultwarden-backup restore
-#   3. Start Vaultwarden: docker compose up -d vaultwarden
+# RESTORE (this container mounts the data volume read-only, so restore with a
+# one-off read-write run of the same image):
+#   docker compose stop vaultwarden vaultwarden-backup
+#   docker run --rm -v vaultwarden_backup:/b alpine ls -l /b      # pick a file
+#   docker run --rm -it -v vaultwarden_data:/bitwarden/data \
+#     -v vaultwarden_backup:/bitwarden/restore \
+#     ttionya/vaultwarden-backup:1.27.2 restore --zip-file backup.<date>.zip
+#   docker compose up -d vaultwarden vaultwarden-backup
+# It prompts for the zip password (VAULTWARDEN_BACKUP_ZIP_PASSWORD). Zips made
+# before 2026-11 used the image's public default password "WHEREISMYPASSWORD?".
+# Rehearse this once against a copy of the volume (docs/backups.md).
 #
 # CLOUD BACKUP (optional):
 #   To also push backups to cloud storage (Backblaze B2, Google Drive, etc.):
@@ -48,8 +54,10 @@ services:
       - CRON=0 2 * * *
       # Number of days to keep backups (30 = one month of daily backups)
       - BACKUP_KEEP_DAYS=30
-      # Compress backups into zip files
+      # Compress backups into password-protected zip files. Without
+      # ZIP_PASSWORD the image uses a public default ("WHEREISMYPASSWORD?").
       - ZIP_ENABLE=TRUE
+      - ZIP_PASSWORD=${VAULTWARDEN_BACKUP_ZIP_PASSWORD:?Set VAULTWARDEN_BACKUP_ZIP_PASSWORD in .env}
       # Rclone remote name — matches the remote defined in vaultwarden/rclone.conf
       - RCLONE_REMOTE_NAME=VaultwardenBackup
       # Backup destination path on the rclone remote (the local volume)
@@ -63,11 +71,13 @@ services:
       - vaultwarden_backup:/bitwarden/backup
       # Rclone config — pre-configured local remote (see vaultwarden/rclone.conf)
       - ../vaultwarden/rclone.conf:/config/rclone/rclone.conf:ro
-    networks:
-      - proxy
+    # Reads the data volume and writes a local volume (rclone remote is
+    # type=local) — no network needed. Add one back if a cloud remote is set.
+    network_mode: none
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.25"
           memory: 128m
 
@@ -77,7 +87,3 @@ volumes:
     name: vaultwarden_data
   vaultwarden_backup:
     name: vaultwarden_backup
-
-networks:
-  proxy:
-    external: true

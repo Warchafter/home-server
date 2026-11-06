@@ -57,6 +57,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.50"
           memory: 512m
 

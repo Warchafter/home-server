@@ -39,8 +39,7 @@
 
     - Backrest:
         icon: backrest.png
-        href: "http://{{HOMEPAGE_VAR_SERVER_IP}}:8106"
-        description: Encrypted offsite backups
+        description: Encrypted backups — via Tailscale Serve :8443 only
         server: local
         container: backrest
 

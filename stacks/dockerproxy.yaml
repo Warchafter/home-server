@@ -5,9 +5,15 @@
 # the host. Instead of mounting it directly into Homepage, we proxy it through
 # this container which only exposes safe, read-only API endpoints.
 #
-# Homepage connects to this proxy (port 2375) instead of the raw socket.
-# The proxy blocks dangerous endpoints (exec, create, push, etc.) while
-# allowing Homepage to read container status and stats.
+# Clients: Homepage (status/stats), Diun (image metadata) and the MCP server
+# (inspect/logs/events/df). They reach it on the internal `dockerapi` network,
+# which nothing else joins and which has no route out.
+#
+# ACCESS: allowlist in dockerproxy/haproxy.cfg — GET only, list/inspect/logs/
+# stats/events/images/df. The stock CONTAINERS=1 flag also allowed GET
+# /containers/<id>/archive and /export (copy any file out of any container),
+# so the env-flag ACL is no longer used. Rejected calls log a 403:
+#   docker logs dockerproxy 2>&1 | grep ' 403 '
 #
 # See: https://github.com/Tecnativa/docker-socket-proxy
 # =============================================================================
@@ -26,36 +32,17 @@ services:
       - /tmp
       - /run
     environment:
-      # Read-only access to containers and images (needed by Homepage)
-      - CONTAINERS=1
-      - IMAGES=1
-      # Block all write/dangerous operations
-      - POST=0
-      - AUTH=0
-      - SECRETS=0
-      - NETWORKS=0
-      - VOLUMES=0
-      - SERVICES=0
-      - TASKS=0
-      - BUILD=0
-      - COMMIT=0
-      - CONFIGS=0
-      - DISTRIBUTION=0
-      - EXEC=0
-      - GRPC=0
-      - NODES=0
-      - PLUGINS=0
-      - SESSION=0
-      - SWARM=0
-      # SYSTEM=1 only for GET /system/df (docker_disk_usage in the MCP server);
-      # POST=0 above still blocks /system/prune and friends.
-      - SYSTEM=1
+      # TCP :2375 (the stock default). The allowlist lives in
+      # dockerproxy/haproxy.cfg; the tecnativa env flags are ignored with a
+      # custom template, so none are set here.
+      - BIND_CONFIG=:2375
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../dockerproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg.template:ro
     networks:
-      - proxy
+      - dockerapi    # internal-only; joined by homepage, diun and mcp, nothing else
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/version || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2375/version || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 10s
@@ -63,9 +50,10 @@ services:
     deploy:
       resources:
         limits:
+          pids: 128
           cpus: "0.25"
           memory: 64m
 
 networks:
-  proxy:
+  dockerapi:
     external: true

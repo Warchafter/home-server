@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import httpx
 
-from core import DOCKER, demux_logs, docker_get, human_bytes, iso, mcp, parse_duration
+from core import DOCKER, container_ref, demux_logs, docker_get, human_bytes, iso, mcp, parse_duration
 
 
 @mcp.tool()
@@ -42,7 +42,7 @@ async def service_details(service: str) -> dict:
     Environment variables are deliberately NOT returned (they hold secrets).
     `service` is the container name as shown by list_services.
     """
-    c = await docker_get(f"/containers/{service}/json")
+    c = await docker_get(f"/containers/{container_ref(service)}/json")
     state = c.get("State", {})
     health = state.get("Health") or {}
     hc = (c.get("Config", {}).get("Healthcheck") or {})
@@ -90,7 +90,7 @@ async def _fetch_logs(service: str, lines: int, since: str) -> str:
     secs = parse_duration(since)
     if secs:
         params["since"] = str(int(time.time() - secs))
-    body = await docker_get(f"/containers/{service}/logs", params=params, raw=True, timeout=30)
+    body = await docker_get(f"/containers/{container_ref(service)}/logs", params=params, raw=True, timeout=30)
     return demux_logs(body)
 
 

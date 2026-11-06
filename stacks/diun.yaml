@@ -48,7 +48,8 @@ services:
       dockerproxy:
         condition: service_healthy
     networks:
-      - proxy        # reach dockerproxy + the registries
+      - proxy        # egress to the registries
+      - dockerapi    # read-only Docker API
     healthcheck:
       test: ["CMD", "diun", "healthcheck"]
       interval: 60s
@@ -58,6 +59,7 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.25"
           memory: 128m
 
@@ -67,4 +69,6 @@ volumes:
 
 networks:
   proxy:
+    external: true
+  dockerapi:
     external: true

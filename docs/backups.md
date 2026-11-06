@@ -18,29 +18,61 @@ Cost: roughly 10–30 GB of data, about $0.06–0.18/month on B2 ($6/TB).
 
 ---
 
-## 1. Backblaze B2
+## 1. Backblaze B2 (delete-resistant)
+
+The point of an offsite copy is surviving the server being compromised or
+encrypted by ransomware, so **the key on the server must not be able to delete
+backups.** On B2, deleting a file through the S3 API without a version ID only
+*hides* it (that needs `writeFiles`). Permanently destroying a version needs
+`deleteFiles`, and the server's key won't have it. Hidden versions are kept for
+30 days by the lifecycle rule, so anything an attacker "deletes" can be brought back.
 
 1. Create a B2 account and a **private** bucket, e.g. `home-server-restic-<random>`.
-   - *Lifecycle settings:* **Keep only the last version** (restic manages its own history).
+   - *Lifecycle settings:* **Keep prior versions for this number of days: 30**
+     (not "keep only the last version", which would purge hidden files the next day).
    - *Default encryption:* on (SSE-B2), as defence in depth on top of restic.
-2. *Application Keys → Add a New Application Key:* allow access to **that bucket
-   only**, Read and Write. Note the `keyID`, the `applicationKey` and the bucket's
-   S3 endpoint (e.g. `s3.us-west-004.backblazeb2.com`).
-3. On the server, add to `.env`:
+2. Create the **server key without delete rights**. The web UI's "Read and Write"
+   includes `deleteFiles`, so use the B2 CLI on the laptop (`pipx install b2`, then
+   `b2 account authorize` with your master key; check `b2 key create --help`
+   for the exact syntax on your version):
+   ```bash
+   b2 key create --bucket <bucket> home-server-restic listBuckets,listFiles,readFiles,writeFiles
+   ```
+   Note the `keyID` and `applicationKey`, plus the bucket's S3 endpoint (e.g.
+   `s3.us-west-004.backblazeb2.com`). Keep the master key off the server; it
+   is only for recovery.
+3. Cost of this setup: pruned data lingers 30 days as hidden versions, which
+   adds roughly a month of churn to storage. That's pennies at this size.
+4. On the server, add to `.env`:
    ```bash
    BACKREST_B2_KEY_ID=<keyID>
    BACKREST_B2_APP_KEY=<applicationKey>
    ```
 
-## 2. First start (finish it immediately — the UI is open until you do)
+## 2. First start
+
+Backrest's UI can read every volume and `.env` and run shell hooks as root, so
+it is not routed through Caddy. It listens only on the server's
+`127.0.0.1:9898`.
 
 ```bash
 cd ~/home-server
 docker compose up -d backrest
 ```
 
-Open `http://SERVER_IP:8106`, set an instance ID (`home-server`), a username,
-and a long unique password (store it in Vaultwarden).
+From the laptop, tunnel to it and open `http://localhost:9898`:
+```bash
+ssh -N -L 9898:127.0.0.1:9898 -o GSSAPIAuthentication=no wachacha@192.168.0.117
+```
+Set an instance ID (`home-server`), a username, and a long unique password
+(store it in Vaultwarden). **Never tick "Disable authentication".**
+
+For everyday remote access after docs/security-hardening.md §4 (machine
+renamed, HTTPS certificates on), serve it on the tailnet with a real cert:
+```bash
+sudo tailscale serve --bg --https=8443 http://127.0.0.1:9898
+```
+→ `https://<machine>.<tailnet>.ts.net:8443`.
 
 ## 3. Add the repository
 
@@ -52,7 +84,7 @@ and a long unique password (store it in Vaultwarden).
 | URI | `s3:https://s3.<region>.backblazeb2.com/<bucket>/home-server` |
 | Password | generate a long random one (`openssl rand -base64 32`) |
 | Env vars | none (the AWS_* keys come from `.env`) |
-| Prune policy | weekly, max unused 10% |
+| Prune policy | weekly, max unused 10% (with the no-delete key, pruned packs become hidden versions that B2 purges after 30 days) |
 | Check policy | monthly, read 5% of data |
 
 **Store the repository password in two places that survive the server dying:**
@@ -107,6 +139,15 @@ You should see the dated Vaultwarden dump files. Clear the scratch volume afterw
 docker run --rm -v backrest_restore:/r busybox sh -c 'rm -rf /r/*'
 ```
 
+## If the server is ever compromised
+
+1. From the laptop, with the B2 master key: `b2 ls --versions --recursive b2://<bucket>/`.
+   Hidden ("deleted") files are still listed for 30 days. Restore with the B2 web UI
+   (*Browse Files → Show all versions → unhide*), or copy the bucket at a past
+   point in time with rclone `--b2-versions` / `--b2-version-at`.
+2. Rotate the server's B2 key (`b2 key delete`, then create a new one with the same
+   capabilities), and the restic password if `backrest_config` may have been read.
+
 ## Restoring for real
 
 Live SQLite files are copied while the apps run. For anything with a
@@ -114,7 +155,7 @@ database, restore the app's **own** backup first:
 
 | App | Consistent copy inside the snapshot |
 |---|---|
-| Vaultwarden | `vaultwarden_backup` volume (daily dump) → `docker exec -it vaultwarden-backup restore` |
+| Vaultwarden | `vaultwarden_backup` volume (daily zip). Procedure in stacks/vaultwarden-backup.yaml (RESTORE) |
 | Sonarr / Radarr / Prowlarr | `<app>_config/_data/Backups/scheduled/*.zip` → *System → Backup → Restore* |
 | Home Assistant | `homeassistant_config/_data/backups/*.tar` |
 | Everything else | stop the container, restore its volume's `_data`, start it |

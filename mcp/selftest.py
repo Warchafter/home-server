@@ -142,6 +142,14 @@ check("queue record", qr["for"] == "Movie" and qr["tracked"] == "warning/importB
 t = apps._torrent({"name": "n", "state": "missingFiles", "progress": 1, "size": 1e9, "ratio": 1.234, "eta": 8640000, "added_on": 1700000000})
 check("torrent shaping", t["progress"] == 100 and t["ratio"] == 1.23 and t["eta_min"] is None and t["added"] == "2023-11-14T22:13:20Z", json.dumps(t))
 
+# container name validation: no path/query injection into the Docker API
+for bad in ["gluetun/json#", "backrest/archive?path=/config", "../x", "", "a b", ".hidden", "x" * 200]:
+    try:
+        core.container_ref(bad); check(f"container_ref rejects {bad[:20]!r}", False)
+    except ValueError:
+        check(f"container_ref rejects {bad[:20]!r}", True)
+check("container_ref accepts names", all(core.container_ref(n) == n for n in ["gluetun", "vaultwarden-backup", "home_server.1", "3f2a9c"]))
+
 # auth: bearer gate on /mcp, /health always open, non-http scopes pass through
 import auth  # noqa: E402
 

@@ -66,6 +66,7 @@ services:
       - /srv/media:/media:ro
     networks:
       - proxy
+      - dockerapi    # read-only Docker API (container status/stats)
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000/api/healthcheck || exit 1"]
       interval: 30s
@@ -75,9 +76,12 @@ services:
     deploy:
       resources:
         limits:
+          pids: 512
           cpus: "0.50"
           memory: 384m
 
 networks:
   proxy:
+    external: true
+  dockerapi:
     external: true

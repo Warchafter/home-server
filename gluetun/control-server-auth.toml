@@ -1,0 +1,16 @@
+# Gluetun control server auth (bind-mounted to /gluetun/auth/config.toml by
+# stacks/gluetun.yaml). Gluetun makes every route private unless a role opens
+# it. Only the read-only public-IP route is open: the Gluetun and qBittorrent
+# healthchecks and the Homepage widget call it from the proxy network.
+# Every write route (PUT /v1/vpn/status, /v1/portforward, /v1/dns/status,
+# /v1/updater/status) and the settings dump (GET /v1/vpn/settings) have no
+# role, so they are refused — nothing on `proxy` can stop the tunnel.
+#
+# If a client ever needs more (e.g. Homepage's port_forwarded field ->
+# GET /v1/portforward), add a role with auth = "apikey" and pass the key in
+# the widget's `key:` — never widen the "none" role.
+
+[[roles]]
+name = "public-ip-readonly"
+routes = ["GET /v1/publicip/ip"]
+auth = "none"

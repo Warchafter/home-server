@@ -12,8 +12,11 @@
 #   2. Edit each Cloudflare-blocked indexer and add the "flaresolverr" tag
 #   3. Re-test the indexer
 #
-# Not exposed on any host port and no Caddy route — only reachable by other
-# containers on the proxy network (Prowlarr talks to it by container name).
+# Not exposed on any host port and no Caddy route. It sits on the private
+# `scrapers` network with Prowlarr only: Chromium renders attacker-controlled
+# tracker pages with --no-sandbox, so a renderer exploit must not land next
+# to the other services. (An Uptime Kuma monitor on flaresolverr:8191 can't
+# reach it any more — rely on its healthcheck + Prowlarr's indexer tests.)
 #
 # NOTE: Chromium runs with --no-sandbox inside the container, so no
 # capabilities are needed despite running a browser. If a solve request fails,
@@ -41,7 +44,7 @@ services:
       - ${CONTAINER_DNS:-1.0.0.1}
       - 1.1.1.1
     networks:
-      - proxy
+      - scrapers     # Prowlarr only — the browser can't reach other services
     healthcheck:
       # Image has no curl/wget; use its own Python against the /health endpoint
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8191/health', timeout=5)"]
@@ -52,10 +55,11 @@ services:
     deploy:
       resources:
         limits:
+          pids: 1024
           # Chromium is the heavy part: each solve spawns a browser instance
           cpus: "1.00"
           memory: 1g
 
 networks:
-  proxy:
+  scrapers:
     external: true

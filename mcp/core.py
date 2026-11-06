@@ -67,6 +67,20 @@ mcp = FastMCP(
 # Backends
 # ---------------------------------------------------------------------------
 
+_CONTAINER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")
+
+
+def container_ref(service: str) -> str:
+    """Validate a container name/ID before it goes into a Docker API path.
+
+    Without this, `service="gluetun/json#"` turned /containers/{service}/logs
+    into an inspect call (Env included) and `?`/`/` reached other endpoints.
+    """
+    if not isinstance(service, str) or not _CONTAINER_NAME.fullmatch(service):
+        raise ValueError(f"invalid container name: {service!r}")
+    return service
+
+
 async def docker_get(path: str, params: dict | None = None, raw: bool = False, timeout: float = 15):
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.get(f"{DOCKER}{path}", params=params)

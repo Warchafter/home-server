@@ -26,12 +26,19 @@ cd ~/home-server && git pull
 df -h /                       # need ~15 GB free: new images + Syncthing's migration (up to 8x its DB)
 ```
 
-Add to `.env` (see `.env.example` for comments):
+Add to `.env` (see `.env.example` for comments). The first two are
+**required**: every `docker compose` command refuses to run until they're set.
 ```bash
 MCP_AUTH_TOKEN=<openssl rand -hex 32>
+VAULTWARDEN_BACKUP_ZIP_PASSWORD=<openssl rand -base64 24>   # also save it in Vaultwarden
 TAILSCALE_IP=<tailscale ip -4>
+CONTAINER_DNS=<SERVER_IP>                                    # containers resolve via AdGuard
 # DIUN_NOTIF_DISCORD_WEBHOOKURL=...   and/or DIUN_NOTIF_TELEGRAM_TOKEN / _CHATIDS
-# BACKREST_B2_KEY_ID=...  BACKREST_B2_APP_KEY=...   (docs/backups.md §1)
+# BACKREST_B2_KEY_ID=...  BACKREST_B2_APP_KEY=...   (docs/backups.md §1 — key WITHOUT deleteFiles)
+```
+```bash
+chmod 600 .env vaultwarden/ssl/key.pem
+docker compose config --quiet && echo "compose config OK"
 ```
 **Check `HOMEPAGE_ALLOWED_HOSTS` in `.env`:** delete the line if it is `*` or the
 old CIDR value (`192.168.0.0/24,...`). Homepage v2 matches exact host strings,
@@ -41,7 +48,7 @@ Pre-upgrade copies of the volumes that migrate one-way: Grafana in wave 1, the
 rest in wave 3. Each container is stopped for its copy, so its database is
 consistent. `--volumes-from` copies whatever the volume is actually named:
 ```bash
-sudo mkdir -p /srv/pre-upgrade-2026-11
+sudo install -d -m 700 /srv/pre-upgrade-2026-11   # holds tokens/keys/DBs: root-only
 docker compose stop autoheal          # don't let it "heal" the stopped containers
 snap() {  # <container> <path inside it> [tar options]
   docker stop "$1" &&
@@ -78,19 +85,30 @@ docker run --rm -v autoheal_sock:/s curlimages/curl -s -o /dev/null -w '%{http_c
 ```bash
 docker volume create cleanuparr_config && docker volume create seerr_config
 sudo chown 1000:1000 /var/lib/docker/volumes/cleanuparr_config/_data /var/lib/docker/volumes/seerr_config/_data
-docker compose up -d dockerproxy diun backrest cleanuparr seerr
-docker compose ps diun backrest cleanuparr seerr
+docker compose up -d backrest cleanuparr seerr
+docker compose ps backrest cleanuparr seerr
 ```
 **Right away**, finish each first-run setup, because each one is open until you do:
-Backrest `:8106` (docs/backups.md §2), Cleanuparr `:8107`, Seerr `:8108`
-(see the stack-file headers). Then `docker compose exec diun diun notif test`.
+Backrest via SSH tunnel (docs/backups.md §2), Cleanuparr `:8107`, Seerr `:8108`
+(see the stack-file headers).
 
-**1d. Proxy, dashboard, MCP (token now required):**
+**1d. Docker API proxy + its clients, together.** dockerproxy moves to the
+internal `dockerapi` network, so Homepage, MCP and Diun must move with it:
 ```bash
 docker compose build mcp
-docker compose up -d caddy homepage mcp
+docker compose up -d dockerproxy homepage mcp diun caddy
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost/caddy-health    # 200
+# allowlist: inspect allowed (200), file copy-out refused (403)
+docker exec homepage wget -q -S -O /dev/null http://dockerproxy:2375/containers/caddy/json 2>&1 | head -1
+docker exec homepage wget -q -S -O /dev/null 'http://dockerproxy:2375/containers/caddy/archive?path=/etc/hostname' 2>&1 | head -1
+# isolation: a container on `proxy` can no longer resolve dockerproxy at all
+docker exec seerr wget -q -T 3 -O- http://dockerproxy:2375/version || echo "unreachable (good)"
+docker logs dockerproxy 2>&1 | grep ' 403 ' | tail      # anything a client needs that got refused
+docker compose exec diun diun notif test
 ```
+If Homepage's container status or a Diun check breaks, the `403` lines show the
+path. Add it to `dockerproxy/haproxy.cfg` only if it's a read-only GET that
+can't return file contents.
 On the laptop, re-register the MCP client with the token:
 `claude mcp remove homeserver && claude mcp add --transport http homeserver http://100.82.82.78:8105/mcp --header "Authorization: Bearer <MCP_AUTH_TOKEN>"`.
 Odysseus needs the same header, or it gets 401.
@@ -104,9 +122,18 @@ docker logs grafana 2>&1 | grep -i -E 'migrat|error' | tail
 **1f. Apps with automatic, low-risk migrations:**
 ```bash
 docker compose up -d sonarr radarr prowlarr bazarr flaresolverr profilarr calibre-web kavita adguard vaultwarden vaultwarden-backup
+nslookup example.com "$(grep ^SERVER_IP= .env | cut -d= -f2)"   # AdGuard still answers (NET_RAW was dropped)
+docker logs adguard 2>&1 | grep -i 'operation not permitted' | tail -3   # should be empty
 ```
-Vaultwarden 1.37 logs out "remember this device" 2FA tokens, so expect one 2FA
-prompt per client. Bazarr 1.6 removed the Podnapisi provider.
+- Vaultwarden 1.37 logs out "remember this device" 2FA tokens, so expect one 2FA
+  prompt per client.
+- Vaultwarden is now on its own network and read-only, and its backup
+  container has no network. Point any Uptime Kuma monitor that used
+  `vaultwarden:80` at `https://<SERVER_IP>:8092/alive` instead.
+- FlareSolverr is now reachable only from Prowlarr. Re-test one
+  Cloudflare-protected indexer in Prowlarr, and drop any Uptime Kuma monitor on
+  `flaresolverr:8191`.
+- Bazarr 1.6 removed the Podnapisi provider.
 
 **1g. VPN pair, together** (qBittorrent shares Gluetun's network namespace):
 ```bash
@@ -116,7 +143,15 @@ docker logs gluetun 2>&1 | grep -i 'port forward' | tail -3
 ```
 In qBittorrent → Options → Connection, the listening port must match. Re-check
 that *Bypass authentication for clients on localhost* is still on (Gluetun's
-port-sync POST needs it).
+port-sync POST needs it). qBittorrent now sees only `/media/downloads`, and its
+save paths are unchanged.
+
+Gluetun's control server now answers only the public-IP route (gluetun/control-server-auth.toml):
+```bash
+docker inspect --format '{{.State.Health.Status}}' gluetun qbittorrent        # healthy healthy
+docker exec homepage wget -q -O- http://gluetun:8000/v1/publicip/ip | head -c 80; echo
+docker exec homepage wget -q -S -O /dev/null http://gluetun:8000/v1/vpn/settings 2>&1 | head -1   # 401/403
+```
 
 ## Wave 2 — first offsite backup
 

@@ -9,11 +9,12 @@ health/queue/library views via their APIs. Consumed by Claude Code (dev
 laptop) and Odysseus (local LLM workspace) over the LAN / Tailscale, routed
 through Caddy at :8105.
 
-Optional bearer-token auth (MCP_AUTH_TOKEN, see auth.py); /health stays open
-for the Docker healthcheck.
+Bearer-token auth is mandatory (MCP_AUTH_TOKEN, >= 32 chars, see auth.py);
+the server refuses to start without it. /health stays open for the Docker
+healthcheck.
 
 Deliberately READ-ONLY: no restart/exec/write tools. Docker access goes
-through dockerproxy, which blocks all POST endpoints (POST=0); app clients
+through dockerproxy's GET-only allowlist (dockerproxy/haproxy.cfg); app clients
 only GET (qBittorrent needs one POST to log in); /media is mounted ro.
 
 Modules register their tools on import:
@@ -50,10 +51,10 @@ if __name__ == "__main__":
 
     from auth import BearerAuth
 
-    app = mcp.streamable_http_app()
     token = os.environ.get("MCP_AUTH_TOKEN", "")
-    if token:
-        app = BearerAuth(app, token)
-    else:
-        logging.warning("MCP_AUTH_TOKEN is not set: /mcp is open to anyone on the LAN/tailnet")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    if len(token) < 32:
+        # Fail closed: an empty or short token would leave container logs and
+        # app APIs readable by anyone on the LAN/tailnet.
+        logging.critical("MCP_AUTH_TOKEN missing or shorter than 32 chars (openssl rand -hex 32); refusing to start")
+        raise SystemExit(1)
+    uvicorn.run(BearerAuth(mcp.streamable_http_app(), token), host="0.0.0.0", port=8000)
