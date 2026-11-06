@@ -44,8 +44,12 @@ docker compose config --quiet && echo "compose config OK"
 old CIDR value (`192.168.0.0/24,...`). Homepage v2 matches exact host strings,
 and the default now covers SERVER_IP + TAILSCALE_IP.
 
-Pre-upgrade copies of the volumes that migrate one-way: Grafana in wave 1, the
-rest in wave 3. Each container is stopped for its copy, so its database is
+**Vaultwarden first, off the server:** in the Bitwarden extension or desktop app,
+*Settings → Vault → Export vault → `.json (Encrypted)`* with a file password,
+saved to the laptop and a USB stick. That copy survives even if the server dies.
+
+Pre-upgrade copies of the volumes that migrate one-way: Vaultwarden and Grafana
+in wave 1, the rest in wave 3. Each container is stopped for its copy, so its database is
 consistent. `--volumes-from` copies whatever the volume is actually named:
 ```bash
 sudo install -d -m 700 /srv/pre-upgrade-2026-11   # holds tokens/keys/DBs: root-only
@@ -55,6 +59,7 @@ snap() {  # <container> <path inside it> [tar options]
   docker run --rm --volumes-from "$1":ro -v /srv/pre-upgrade-2026-11:/b alpine tar czf "/b/$1.tgz" $3 "$2"
   docker start "$1"
 }
+snap vaultwarden   /data          # 1.37 runs one-way DB migrations
 snap uptime-kuma   /app/data
 snap syncthing     /var/syncthing
 snap grafana       /var/lib/grafana
@@ -126,7 +131,9 @@ nslookup example.com "$(grep ^SERVER_IP= .env | cut -d= -f2)"   # AdGuard still 
 docker logs adguard 2>&1 | grep -i 'operation not permitted' | tail -3   # should be empty
 ```
 - Vaultwarden 1.37 logs out "remember this device" 2FA tokens, so expect one 2FA
-  prompt per client.
+  prompt per client. Check that the web vault and one client sync before going on.
+  Rollback: set `vaultwarden/server:1.35.4` back, stop it, restore
+  `/srv/pre-upgrade-2026-11/vaultwarden.tgz` (see the wave 3 rollback command), start it.
 - Vaultwarden is now on its own network and read-only, and its backup
   container has no network. Point any Uptime Kuma monitor that used
   `vaultwarden:80` at `https://<SERVER_IP>:8092/alive` instead.
