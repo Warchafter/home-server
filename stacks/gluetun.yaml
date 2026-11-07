@@ -65,6 +65,14 @@ services:
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
       - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":{{PORTS}}}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
+      # --- DNS (Gluetun's internal resolver, used by qBittorrent) ---
+      # DNS-over-HTTPS (443) inside the tunnel instead of the DNS-over-TLS
+      # (853) default: on 2026-11-06 the path to 1.0.0.1:853 started
+      # answering with TCP resets through ProtonVPN, every lookup timed out,
+      # and Gluetun's startup check restarted the tunnel every 6 s for hours.
+      # Two resolvers split the query log between providers.
+      - DNS_UPSTREAM_RESOLVER_TYPE=doh
+      - DNS_UPSTREAM_RESOLVERS=cloudflare,quad9
       # Allow qBittorrent's web UI and Gluetun control server through firewall
       - FIREWALL_INPUT_PORTS=8080,8000
       # Enable HTTP control server for Homepage widget (shows VPN public IP).
