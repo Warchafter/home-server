@@ -53,6 +53,15 @@ include:
 # =============================================================================
 # Shared Networks
 # =============================================================================
+# The stack files declare these as `external: true`, so Compose does NOT
+# create them — scripts/setup.sh does (create_networks), or by hand:
+#   docker network create proxy; docker network create monitoring
+#   docker network create --internal dockerapi
+#   docker network create scrapers; docker network create vault
+#   docker network create backups
+# The driver/internal settings below document the intent; on an existing
+# network they are not applied, so `dockerapi` must be created --internal.
+#
 # proxy:      All user-facing services join this network so Caddy can
 #             reverse-proxy to them by container name. Docker's built-in DNS
 #             resolves names automatically on user-defined bridge networks.

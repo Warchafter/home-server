@@ -379,6 +379,23 @@ setup_env() {
 }
 
 # ---------------------------------------------------------------------------
+# Step 6b: Create the shared Docker networks
+# ---------------------------------------------------------------------------
+# The stack files declare these as external, so Compose won't create them.
+# dockerapi is internal (no route out): only the read-only Docker API proxy
+# and its clients join it.
+# ---------------------------------------------------------------------------
+
+create_networks() {
+    local net
+    for net in proxy monitoring scrapers vault backups; do
+        sudo docker network inspect "$net" >/dev/null 2>&1 || sudo docker network create "$net" >/dev/null
+    done
+    sudo docker network inspect dockerapi >/dev/null 2>&1 || sudo docker network create --internal dockerapi >/dev/null
+    ok "Docker networks ready: proxy monitoring dockerapi(internal) scrapers vault backups"
+}
+
+# ---------------------------------------------------------------------------
 # Step 7: Create media and sync directories (Phase 2)
 # ---------------------------------------------------------------------------
 # These directories must exist before Docker Compose creates bind mounts,
@@ -523,6 +540,8 @@ main() {
     detect_server_ip
     echo ""
     setup_env
+    echo ""
+    create_networks
     echo ""
     create_media_dirs
     echo ""

@@ -56,7 +56,10 @@ bash scripts/setup.sh
 nano .env
 
 # 5. Start everything:
-docker network create proxy
+# (setup.sh creates the shared networks; by hand:
+#  docker network create proxy; docker network create monitoring
+#  docker network create --internal dockerapi; docker network create scrapers
+#  docker network create vault; docker network create backups)
 docker compose up -d
 
 # 6. FIRST RUN: Complete AdGuard setup wizard at http://SERVER_IP:3000

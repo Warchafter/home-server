@@ -39,6 +39,11 @@ CONTAINER_DNS=<SERVER_IP>                                    # containers resolv
 ```bash
 chmod 600 .env vaultwarden/ssl/key.pem
 docker compose config --quiet && echo "compose config OK"
+# new networks (stacks declare them external, so compose won't create them)
+docker network create --internal dockerapi
+docker network create scrapers
+docker network create vault
+docker network create backups
 ```
 **Check `HOMEPAGE_ALLOWED_HOSTS` in `.env`:** delete the line if it is `*` or the
 old CIDR value (`192.168.0.0/24,...`). Homepage v2 matches exact host strings,
