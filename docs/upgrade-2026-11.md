@@ -82,8 +82,8 @@ docker compose up -d autoheal-proxy autoheal
 docker logs autoheal --tail 5          # "Monitoring containers for unhealthy status"
 docker logs autoheal-proxy --tail 5
 # must be 403 (create blocked) and 200 (list allowed):
-docker run --rm -v autoheal_sock:/s curlimages/curl -s -o /dev/null -w '%{http_code}\n' --unix-socket /s/docker.sock -X POST http://localhost/containers/create
-docker run --rm -v autoheal_sock:/s curlimages/curl -s -o /dev/null -w '%{http_code}\n' --unix-socket /s/docker.sock http://localhost/containers/json
+docker run --rm --user 0 -v autoheal_sock:/s curlimages/curl -s -o /dev/null -w '%{http_code}\n' --unix-socket /s/docker.sock -X POST http://localhost/containers/create
+docker run --rm --user 0 -v autoheal_sock:/s curlimages/curl -s -o /dev/null -w '%{http_code}\n' --unix-socket /s/docker.sock http://localhost/containers/json
 ```
 
 **1c. New services.** Cleanuparr and Seerr run as UID 1000, and fresh named volumes are root-owned:
