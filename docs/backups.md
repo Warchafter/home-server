@@ -62,8 +62,11 @@ docker compose up -d backrest
 
 From the laptop, tunnel to it and open `http://localhost:9898`:
 ```bash
-ssh -N -L 9898:127.0.0.1:9898 -o GSSAPIAuthentication=no wachacha@192.168.0.117
+ssh -N -L 9898:127.0.0.1:9898 -o GSSAPIAuthentication=no wachacha@100.82.82.78
 ```
+Run it **on the laptop** (not in an SSH session on the server). After the
+password it prints nothing — that's the tunnel holding open; leave it running.
+(`100.82.82.78` is the server's Tailscale IP; at home `192.168.0.117` also works.)
 Set an instance ID (`home-server`), a username, and a long unique password
 (store it in Vaultwarden). **Never tick "Disable authentication".**
 

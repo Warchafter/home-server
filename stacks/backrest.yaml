@@ -29,7 +29,8 @@
 # the shared proxy network. It listens on the host's 127.0.0.1:9898 only:
 #   - remotely: Tailscale Serve, https://<machine>.<tailnet>.ts.net:8443
 #     (sudo tailscale serve --bg --https=8443 http://127.0.0.1:9898)
-#   - or an SSH tunnel: ssh -L 9898:127.0.0.1:9898 wachacha@SERVER_IP
+#   - or an SSH tunnel, run ON THE LAPTOP:
+#       ssh -N -L 9898:127.0.0.1:9898 wachacha@100.82.82.78   (then http://localhost:9898)
 # FIRST RUN: set a username + long password immediately; never tick
 # "Disable authentication". Walkthrough: docs/backups.md
 # =============================================================================

@@ -25,11 +25,12 @@ the data, (3) unpatched software, and (4) metadata leaking to third parties
 
 ## 1. SSH: keys only
 
-From the **laptop** (keep an existing server session open until the last check below passes):
+From the **laptop** (keep an existing server session open until the last check below passes;
+`100.82.82.78` is the server's Tailscale IP, `192.168.0.117` also works at home):
 
 ```bash
-ssh-copy-id -i ~/.ssh/id_ed25519_personal.pub -o GSSAPIAuthentication=no wachacha@192.168.0.117
-ssh -i ~/.ssh/id_ed25519_personal -o GSSAPIAuthentication=no -o PasswordAuthentication=no wachacha@192.168.0.117 true && echo KEY OK
+ssh-copy-id -i ~/.ssh/id_ed25519_personal.pub -o GSSAPIAuthentication=no wachacha@100.82.82.78
+ssh -i ~/.ssh/id_ed25519_personal -o GSSAPIAuthentication=no -o PasswordAuthentication=no wachacha@100.82.82.78 true && echo KEY OK
 ```
 
 Only continue if it prints `KEY OK`. Then **on the server**:
@@ -46,8 +47,8 @@ sudo systemctl reload ssh
 terminal that both a key login works and a password login is refused:
 
 ```bash
-ssh -o GSSAPIAuthentication=no wachacha@192.168.0.117 true && echo KEY OK
-ssh -o PubkeyAuthentication=no -o GSSAPIAuthentication=no wachacha@192.168.0.117   # expect: Permission denied (publickey)
+ssh -o GSSAPIAuthentication=no wachacha@100.82.82.78 true && echo KEY OK
+ssh -o PubkeyAuthentication=no -o GSSAPIAuthentication=no wachacha@100.82.82.78   # expect: Permission denied (publickey)
 ```
 
 Rollback (from the still-open session or the console): `sudo rm /etc/ssh/sshd_config.d/00-hardening.conf && sudo systemctl reload ssh`.
