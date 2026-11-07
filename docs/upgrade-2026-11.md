@@ -90,8 +90,8 @@ docker run --rm --user 0 -v autoheal_sock:/s curlimages/curl -s -o /dev/null -w 
 ```bash
 docker volume create cleanuparr_config && docker volume create seerr_config
 sudo chown 1000:1000 /var/lib/docker/volumes/cleanuparr_config/_data /var/lib/docker/volumes/seerr_config/_data
-docker compose up -d backrest cleanuparr seerr
-docker compose ps backrest cleanuparr seerr
+docker compose up -d backrest cleanuparr seerr caddy    # caddy: the :8107/:8108 routes are new
+docker compose ps backrest cleanuparr seerr caddy
 ```
 **Right away**, finish each first-run setup, because each one is open until you do:
 Backrest via SSH tunnel (docs/backups.md §2), Cleanuparr `:8107`, Seerr `:8108`
