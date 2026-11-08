@@ -146,12 +146,21 @@ The Bitwarden mobile apps reject the self-signed cert. Tailscale Serve gives a
 Let's Encrypt cert for `<machine>.<tailnet>.ts.net`, no domain needed.
 
 **Privacy first:** issuing that certificate writes the full hostname to the
-public Certificate Transparency logs, permanently. The current machine name
-`wachacha-server-dev` contains your username. Rename it before enabling HTTPS:
-*Machines → server → Edit machine name* (e.g. `home`). The Tailscale IP does
-not change; update anything that uses the MagicDNS name.
+public Certificate Transparency logs, permanently. The original machine name
+`wachacha-server-dev` contained the server login. Rename first, from the server
+(`tailscale set` keeps your other flags, unlike `tailscale up`):
+```bash
+sudo tailscale set --hostname=home
+tailscale status --self --json | grep -m1 '"DNSName"'   # must show home.<tailnet>.ts.net.
+```
+(The console rename only sticks with *Auto-generate from OS hostname* unchecked.)
+The Tailscale IP, Linux hostname and SSH are unchanged.
 
-Then: *DNS → HTTPS Certificates → Enable*, and on the server:
+Then enable *HTTPS certificates* (leave **Tailscale Funnel unchecked**: it would
+publish to the internet and grant Funnel to all members). If a
+`tailscale serve` is still waiting for that page, Ctrl-C it first: it resumes
+on its own the moment HTTPS is enabled, under whatever the name is then. The
+certificate is issued on the first client connection. On the server:
 ```bash
 sudo tailscale serve --bg --https=443 https+insecure://localhost:8092
 tailscale serve status
@@ -159,7 +168,8 @@ tailscale serve status
 
 `https+insecure` is fine here: the hop is localhost → container, and
 Vaultwarden keeps its own self-signed TLS for LAN clients on :8092. Point the
-mobile apps and browser extension at `https://home.<tailnet>.ts.net`. Once
+mobile apps and browser extension at `https://home.<tailnet>.ts.net`
+(done 2026-11-08: `https://home.tail454559.ts.net`, Let's Encrypt cert). Once
 every client uses that URL, set `VAULTWARDEN_DOMAIN=https://home.<tailnet>.ts.net`
 in `.env` and `docker compose up -d vaultwarden` — Vaultwarden needs DOMAIN to
 match the URL for passkey/FIDO2 2FA and attachment links.
