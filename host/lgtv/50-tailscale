@@ -1,0 +1,31 @@
+#!/bin/sh
+# /var/lib/webosbrew/init.d/50-tailscale — start tailscaled at boot.
+# Homebrew Channel runs this via `run-parts /var/lib/webosbrew/init.d` as root.
+# Must return quickly and never block boot. Installed by install-tailscale.sh.
+BIN=/media/developer/tailscale/bin
+STATE=/var/lib/webosbrew/tailscale
+RUN=/var/run/tailscale
+SOCK=$RUN/tailscaled.sock
+LOG=$STATE/tailscaled.log
+
+[ -x "$BIN/tailscaled" ] || exit 0
+mkdir -p "$RUN" "$STATE" && chmod 700 "$STATE"
+
+# Kernel TUN device (some firmware doesn't create the node)
+if [ ! -c /dev/net/tun ]; then
+  modprobe tun 2>/dev/null
+  mkdir -p /dev/net && mknod /dev/net/tun c 10 200 2>/dev/null
+fi
+
+# Already running? (check the process, not `tailscale status`, which also
+# fails while the daemon is up but logged out)
+pgrep -f "$BIN/tailscaled" >/dev/null 2>&1 && exit 0
+
+# Keep the log from growing forever on the TV's flash
+[ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 1048576 ] && : > "$LOG"
+
+# Prefs (hostname, netfilter off, shields up, ...) persist in $STATE from the
+# one-time `tailscale up` in install-tailscale.sh.
+nohup "$BIN/tailscaled" --statedir="$STATE" --socket="$SOCK" --port=41641 \
+  >> "$LOG" 2>&1 < /dev/null &
+exit 0
